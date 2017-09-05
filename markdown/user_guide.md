@@ -97,18 +97,22 @@ Markdown 也允许你偷懒只在整个段落的第一行最前面加上 > ：
 8. 第八列
 6. 第九列
 
-注意：如果你的文档中需要像下面这样的开头：  
+注意：如果你的文档中需要像下面这样的开头：
+```  
     1986. What a great season.   
+```
 换句话说，也就是在行首出现**数字-句点-空格**，要避免这样的状况，你可以在句点前加上反斜线。  
+```
     1986\. What a great season.  
-
+```
 ### 4.代码区块
 
 和程序相关的写作或是标签语言原始码通常会有已经排版好的代码区块，通常这些区块我们并不希望它以一般段落文件的方式去排版，而是照原来的样子显示，Markdown 会用 `<pre>`和 `<code>`标签来把代码区块包起来。一个代码区块会一直持续到没有缩进的那一行（或是文件结尾）。
-
+```
     public static void main(String[] args){
         System.out.println("Hello, world !");
     }
+```
 
 #### 5.分隔线
 
@@ -131,13 +135,19 @@ _______
 
 ### 1.链接
 Markdown 支持两种形式的链接语法： 行内式和引用式两种形式。不管是哪一种，链接文字都是用 [方括号] 来标记。要建立一个行内式的链接，只要在方块括号后面紧接着圆括号并插入网址链接即可，如果你还想要加上链接的 title 文字，只要在网址后面，用双引号把 title 文字包起来即可，例如：  
+```
     This is [an example](http://example.com/ "Title") inline link.  
     [This link](http://example.net/) has no title attribute.
+```
 
 引用式的链接是在链接文字的括号后面再接上另一个方括号，而在第二个方括号里面要填入用以辨识链接的标记：
+```
     This is [an example][id] reference-style link.  
+```
 接着，在文件的任意处，你可以把这个标记的链接内容定义出来：  
+```
     [id]: http://example.com/  "Optional Title Here"  
+```
 链接内容定义的形式为：
 
 * 方括号（前面可以选择性地加上至多三个空格来缩进），里面输入链接文字
@@ -147,10 +157,11 @@ Markdown 支持两种形式的链接语法： 行内式和引用式两种形式�
 * 选择性地接着 title 内容，可以用单引号、双引号或是括弧包着
 
 下面这三种链接的定义都是相同：
+```
     [foo]: http://example.com/  "Optional Title Here"
     [foo]: http://example.com/  'Optional Title Here'
     [foo]: http://example.com/  (Optional Title Here)
-    
+```
 
 
 ### 2.强调 （黑体、斜体、删除）
@@ -182,8 +193,11 @@ Markdown使用 * 和 _ 来标记要强调的文字，如果要在文字前后直
 ### 4.图片
 
 Markdown 使用一种和链接很相似的语法来标记图片，同样也允许两种样式： 行内式和引用式。行内式的图片语法看起来像是：
+```
     ![Alt text](/path/to/img.jpg)  
     ![Alt text](/path/to/img.jpg "Optional title")
+```
+
 详细叙述如下：
 
 * 一个惊叹号 !
@@ -191,6 +205,38 @@ Markdown 使用一种和链接很相似的语法来标记图片，同样也允�
 * 接着一个普通括号，里面放上图片的网址，最后还可以用引号包住并加上 选择性的 ‘title’文字。
 
 引用式的图片语法则长得像这样：
-    ![Alt text][id]  
-[id]是图片参考的名称，图片参考的定义方式则和连结参考一样：
+```
+    ![Alt text][id]
+```  
+[ id ]是图片参考的名称，图片参考的定义方式则和连结参考一样：
+```
     [id]: url/to/image  "Optional title attribute"  
+```
+到目前为止， Markdown 还没有办法指定图片的宽高，如果你需要的话，你可以使用普通的 `<img>`标签。
+
+### 5.反斜杠
+
+Markdown 可以利用反斜杠来插入一些在语法中有其它意义的符号，例如： * 本来是有强调效果的，但是你知识想在文字两端插入 * 号本身，不需要强调效果，就可以使用反斜线加上有其他语义的符号：
+
+\*literal asterisks\*
+
+Markdown 支持以下这些符号前面加上反斜杠来帮助插入普通的符号：
+
+```
+\   反斜线
+`   反引号
+*   星号
+_   底线
+{}  花括号
+[]  方括号
+()  括弧
+#   井字号
++   加号
+-   减号
+.   英文句点
+!   惊叹号
+```
+
+### 附录A.
+
+在GitHub pull request, Issues， commit message， markdown文档中可以加入表情符，使用语法为`:name_of_emoji:`。[详细信息请参考](emoji.md)
