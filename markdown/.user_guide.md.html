@@ -1,0 +1,824 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Strict//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>C:\Users\lwei\Desktop\MyDOCS\markdown\.user_guide.md.html</title>
+
+
+<style type="text/css">
+body {
+	color: #333;
+	font: 13px/1.4 "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+	padding: 0;
+	margin: 0;
+}
+
+a {
+	background: transparent;
+	color: #4183c4;
+	text-decoration: none;
+}
+
+a:active,
+a:hover {
+	outline: 0 none;
+	text-decoration: underline;
+}
+
+abbr[title] {
+	border-bottom: 1px dotted;
+}
+
+b,
+strong {
+	font-weight: bold;
+}
+
+dfn {
+	font-style: italic;
+}
+h1 {
+	font-size: 2em;
+	margin: 0.67em 0;
+}
+mark {
+	background: #ff0;
+	color: #000;
+}
+small {
+	font-size: 80%;
+}
+sub, sup {
+	font-size: 75%;
+	line-height: 0;
+	position: relative;
+	vertical-align: baseline;
+}
+sup {
+	top: -0.5em;
+}
+sub {
+	bottom: -0.25em;
+}
+img {
+	border: 0 none;
+}
+svg:not(:root) {
+	overflow: hidden;
+}
+figure {
+	margin: 1em 40px;
+}
+hr {
+	box-sizing: content-box;
+	height: 0;
+}
+
+code,
+kbd,
+pre,
+samp {
+	font-family: monospace,monospace;
+	font-size: 1em;
+}
+
+pre {
+	overflow: auto;
+	font: 12px Consolas,"Liberation Mono",Menlo,Courier,monospace;
+	margin-bottom: 0;
+	margin-top: 0;
+}
+
+.markdown-body {
+	padding: 30px;
+	font-size: 16px;
+	line-height: 1.6;
+	word-wrap: break-word;
+}
+
+.markdown-body>*:first-child {
+	margin-top: 0 !important;
+}
+
+.markdown-body>*:last-child {
+	margin-bottom: 0 !important;
+}
+
+.markdown-body .absent {
+	color: #c00;
+}
+
+.markdown-body .anchor {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	display: block;
+	padding-right: 6px;
+	padding-left: 30px;
+	margin-left: -30px;
+}
+
+.markdown-body .anchor:focus {
+	outline: none;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+	position: relative;
+	margin-top: 1em;
+	margin-bottom: 16px;
+	font-weight: bold;
+	line-height: 1.4;
+}
+
+.markdown-body h1 .octicon-link,
+.markdown-body h2 .octicon-link,
+.markdown-body h3 .octicon-link,
+.markdown-body h4 .octicon-link,
+.markdown-body h5 .octicon-link,
+.markdown-body h6 .octicon-link {
+	display: none;
+	color: #000;
+	vertical-align: middle;
+}
+
+.markdown-body h1:hover .anchor,
+.markdown-body h2:hover .anchor,
+.markdown-body h3:hover .anchor,
+.markdown-body h4:hover .anchor,
+.markdown-body h5:hover .anchor,
+.markdown-body h6:hover .anchor {
+	padding-left: 8px;
+	margin-left: -30px;
+	line-height: 1;
+	text-decoration: none;
+}
+
+.markdown-body h1:hover .anchor .octicon-link,
+.markdown-body h2:hover .anchor .octicon-link,
+.markdown-body h3:hover .anchor .octicon-link,
+.markdown-body h4:hover .anchor .octicon-link,
+.markdown-body h5:hover .anchor .octicon-link,
+.markdown-body h6:hover .anchor .octicon-link {
+	display: inline-block;
+}
+
+.markdown-body h1 tt,
+.markdown-body h1 code,
+.markdown-body h2 tt,
+.markdown-body h2 code,
+.markdown-body h3 tt,
+.markdown-body h3 code,
+.markdown-body h4 tt,
+.markdown-body h4 code,
+.markdown-body h5 tt,
+.markdown-body h5 code,
+.markdown-body h6 tt,
+.markdown-body h6 code {
+	font-size: inherit;
+}
+
+.markdown-body h1 {
+	padding-bottom: 0.3em;
+	font-size: 2.25em;
+	line-height: 1.2;
+	border-bottom: 1px solid #eee;
+}
+
+.markdown-body h2 {
+	padding-bottom: 0.3em;
+	font-size: 1.75em;
+	line-height: 1.225;
+	border-bottom: 1px solid #eee;
+}
+
+.markdown-body h3 {
+	font-size: 1.5em;
+	line-height: 1.43;
+}
+
+.markdown-body h4 {
+	font-size: 1.25em;
+}
+
+.markdown-body h5 {
+	font-size: 1em;
+}
+
+.markdown-body h6 {
+	font-size: 1em;
+	color: #777;
+}
+
+.markdown-body p,.markdown-body blockquote,
+.markdown-body ul,.markdown-body ol,
+.markdown-body dl,.markdown-body table,
+.markdown-body pre {
+	margin-top: 0;
+	margin-bottom: 16px;
+}
+
+.markdown-body hr {
+	height: 4px;
+	padding: 0;
+	margin: 16px 0;
+	background-color: #e7e7e7;
+	border: 0 none;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+	padding-left: 2em;
+}
+
+.markdown-body ul.no-list,
+.markdown-body ol.no-list {
+	padding: 0;
+	list-style-type: none;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+.markdown-body li>p {
+	margin-top: 16px;
+}
+
+.markdown-body dl {
+	padding: 0;
+}
+
+.markdown-body dl dt {
+	padding: 0;
+	margin-top: 16px;
+	font-size: 1em;
+	font-style: italic;
+	font-weight: bold;
+}
+
+.markdown-body dl dd {
+	padding: 0 16px;
+	margin-bottom: 16px;
+}
+
+.markdown-body blockquote {
+	padding: 0 15px;
+	color: #777;
+	border-left: 4px solid #ddd;
+}
+
+.markdown-body blockquote>:first-child {
+	margin-top: 0;
+}
+
+.markdown-body blockquote>:last-child {
+	margin-bottom: 0;
+}
+
+.markdown-body table {
+	display: block;
+	width: 100%;
+	overflow: auto;
+	word-break: normal;
+	word-break: keep-all;
+}
+
+.markdown-body table th {
+	font-weight: bold;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+	padding: 6px 13px;
+	border: 1px solid #ddd;
+}
+
+.markdown-body table tr {
+	background-color: #fff;
+	border-top: 1px solid #ccc;
+}
+
+.markdown-body table tr:nth-child(2n) {
+	background-color: #f8f8f8;
+}
+
+.markdown-body img {
+	max-width: 100%;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.markdown-body span.frame {
+	display: block;
+	overflow: hidden;
+}
+
+.markdown-body span.frame>span {
+	display: block;
+	float: left;
+	width: auto;
+	padding: 7px;
+	margin: 13px 0 0;
+	overflow: hidden;
+	border: 1px solid #ddd;
+}
+
+.markdown-body span.frame span img {
+	display: block;
+	float: left;
+}
+
+.markdown-body span.frame span span {
+	display: block;
+	padding: 5px 0 0;
+	clear: both;
+	color: #333;
+}
+
+.markdown-body span.align-center {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+
+.markdown-body span.align-center>span {
+	display: block;
+	margin: 13px auto 0;
+	overflow: hidden;
+	text-align: center;
+}
+
+.markdown-body span.align-center span img {
+	margin: 0 auto;
+	text-align: center;
+}
+
+.markdown-body span.align-right {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+
+.markdown-body span.align-right>span {
+	display: block;
+	margin: 13px 0 0;
+	overflow: hidden;
+	text-align: right;
+}
+
+.markdown-body span.align-right span img {
+	margin: 0;
+	text-align: right;
+}
+
+.markdown-body span.float-left {
+	display: block;
+	float: left;
+	margin-right: 13px;
+	overflow: hidden;
+}
+
+.markdown-body span.float-left span {
+	margin: 13px 0 0;
+}
+
+.markdown-body span.float-right {
+	display: block;
+	float: right;
+	margin-left: 13px;
+	overflow: hidden;
+}
+
+.markdown-body span.float-right>span {
+	display: block;
+	margin: 13px auto 0;
+	overflow: hidden;
+	text-align: right;
+}
+
+.markdown-body code,.markdown-body tt {
+	padding: 0;
+	padding-top: 0.2em;
+	padding-bottom: 0.2em;
+	margin: 0;
+	font-size: 85%;
+	background-color: rgba(0,0,0,0.04);
+	border-radius: 3px;
+}
+
+.markdown-body code:before,
+.markdown-body code:after,
+.markdown-body tt:before,
+.markdown-body tt:after {
+	letter-spacing: -0.2em;
+	content: "\00a0";
+}
+
+.markdown-body code br,
+.markdown-body tt br {
+	display: none;
+}
+
+.markdown-body del code {
+	text-decoration: inherit;
+}
+
+.markdown-body pre>code {
+	padding: 0;
+	margin: 0;
+	font-size: 100%;
+	word-break: normal;
+	white-space: pre;
+	background: transparent;
+	border: 0;
+}
+
+.markdown-body .highlight {
+	margin-bottom: 16px;
+}
+
+.markdown-body .highlight pre,
+.markdown-body pre {
+	padding: 16px;
+	overflow: auto;
+	font-size: 85%;
+	line-height: 1.45;
+	background-color: #f7f7f7;
+	border-radius: 3px;
+}
+
+.markdown-body .highlight pre {
+	margin-bottom: 0;
+	word-break: normal;
+}
+
+.markdown-body pre {
+	word-wrap: normal;
+}
+
+.markdown-body pre code,
+.markdown-body pre tt {
+	display: inline;
+	max-width: initial;
+	padding: 0;
+	margin: 0;
+	overflow: initial;
+	line-height: inherit;
+	word-wrap: normal;
+	background-color: transparent;
+	border: 0;
+}
+
+.markdown-body pre code:before,
+.markdown-body pre code:after,
+.markdown-body pre tt:before,
+.markdown-body pre tt:after {
+	content: normal;
+}
+
+.highlight .pl-coc,
+.highlight .pl-entl,
+.highlight .pl-entm,
+.highlight .pl-eoa,
+.highlight .pl-mai .pl-sf,
+.highlight .pl-mm,
+.highlight .pl-pdv,
+.highlight .pl-sc,
+.highlight .pl-som,
+.highlight .pl-sr,
+.highlight .pl-v,
+.highlight .pl-vpf {
+	color: #0086b3;
+}
+.highlight .pl-eoac,
+.highlight .pl-mdht,
+.highlight .pl-mi1,
+.highlight .pl-mri,
+.highlight .pl-va,
+.highlight .pl-vpu {
+	color: #008080;
+}
+.highlight .pl-c,
+.highlight .pl-pdc {
+	color: #b4b7b4;
+	font-style: italic;
+}
+.highlight .pl-k,
+.highlight .pl-ko,
+.highlight .pl-kolp,
+.highlight .pl-mc,
+.highlight .pl-mr,
+.highlight .pl-ms,
+.highlight .pl-s,
+.highlight .pl-sok,
+.highlight .pl-st {
+	color: #6e5494;
+}
+.highlight .pl-ef,
+.highlight .pl-enf,
+.highlight .pl-enm,
+.highlight .pl-entc,
+.highlight .pl-eoi,
+.highlight .pl-sf,
+.highlight .pl-smc {
+	color: #d12089;
+}
+.highlight .pl-ens,
+.highlight .pl-eoai,
+.highlight .pl-kos,
+.highlight .pl-mh .pl-pdh,
+.highlight .pl-mp,
+.highlight .pl-pde,
+.highlight .pl-stp {
+	color: #458;
+}
+.highlight .pl-enti {
+	color: #d12089;
+	font-weight: bold;
+}
+.highlight .pl-cce,
+.highlight .pl-enc,
+.highlight .pl-kou,
+.highlight .pl-mq {
+	color: #f93;
+}
+.highlight .pl-mp1 .pl-sf {
+	color: #458;
+	font-weight: bold;
+}
+.highlight .pl-cos,
+.highlight .pl-ent,
+.highlight .pl-md,
+.highlight .pl-mdhf,
+.highlight .pl-ml,
+.highlight .pl-pdc1,
+.highlight .pl-pds,
+.highlight .pl-s1,
+.highlight .pl-scp,
+.highlight .pl-sol {
+	color: #df5000;
+}
+.highlight .pl-c1,
+.highlight .pl-cn,
+.highlight .pl-pse,
+.highlight .pl-pse .pl-s2,
+.highlight .pl-vi {
+	color: #a31515;
+}
+.highlight .pl-mb,
+.highlight .pl-pdb {
+	color: #df5000;
+	font-weight: bold;
+}
+.highlight .pl-mi,
+.highlight .pl-pdi {
+	color: #6e5494;
+	font-style: italic;
+}
+.highlight .pl-ms1 {
+	background-color: #f5f5f5;
+}
+.highlight .pl-mdh,
+.highlight .pl-mdi {
+	font-weight: bold;
+}
+.highlight .pl-mdr {
+	color: #0086b3;
+	font-weight: bold;
+}
+.highlight .pl-s2 {
+	color: #333;
+}
+.highlight .pl-ii {
+	background-color: #df5000;
+	color: #fff;
+}
+.highlight .pl-ib {
+	background-color: #f93;
+}
+.highlight .pl-id {
+	background-color: #a31515;
+	color: #fff;
+}
+.highlight .pl-iu {
+	background-color: #b4b7b4;
+}
+.highlight .pl-mo {
+	color: #969896;
+}
+
+</style>
+
+
+<script type="text/javascript">
+
+function getDocumentScrollTop() 
+{
+   var res = document.body.scrollTop || document.documentElement.scrollTop || window.pageYOffset || 0;
+   // alert(res);
+   return res;
+}
+
+function setDocumentScrollTop(ypos) 
+{
+	window.scrollTo(0, ypos);
+}
+
+</script>
+
+
+</head>
+<body class="markdown-body">
+<h1> <a id="我的markdown学习手册" class="anchor" href="#%E6%88%91%E7%9A%84markdown%E5%AD%A6%E4%B9%A0%E6%89%8B%E5%86%8C" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>我的Markdown学习手册</h1> 
+<h2> <a id="markdown简介" class="anchor" href="#markdown%E7%AE%80%E4%BB%8B" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Markdown简介</h2> 
+<p>Markdown的理念是让文档更容易读、写和随意改。HTML是一种发布的格式，Markdown是一种书写的格式，所以Markdown的格式语法只涵盖纯文本的范畴。简单地讲Markdown是一种非常方便且易发布的码字文本格式。如果需要更好的显示效果可以直接在Markdown文本中直接使用HTML撰写，不需要额外说明这是HTML格式或Markdown格式。</p> 
+<h2> <a id="markdown对特殊字符的处理" class="anchor" href="#markdown%E5%AF%B9%E7%89%B9%E6%AE%8A%E5%AD%97%E7%AC%A6%E7%9A%84%E5%A4%84%E7%90%86" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Markdown对特殊字符的处理</h2> 
+<p>在 HTML 文件中，有两个字符需要特殊处理：<code>&lt;</code> 和<code>&amp;</code> 。<code>&lt;</code>符号用于起始标签，<code>&amp;</code> 符号则用于标记 HTML 实体，如果你只是想要显示这些字符的原型，你必须要使用实体的形式，像是<code>&amp;lt;</code>和<code>&amp;amp;</code>。</p> 
+<p><code>&amp;</code> 字符尤其让网络文档编写者受折磨，如果你要打<code>AT&amp;T</code>,你必须要写成<code>AT&amp;amp;T</code>。而网址中的<code>&amp;</code> 字符也要装换。比如你要链接到：</p> 
+<pre><code>http://images.google.com/images?num=30&amp;q=larry+bird
+</code></pre> 
+<p>你必须要把网址转换写为：</p> 
+<pre><code>http://images.google.com/images?num=30&amp;amp;q=larry+bird
+</code></pre> 
+<p>才能放到链接标签的 <code>href</code>属性里。不用说也知道这很容易忽略，这也可能是 HTML 标准检验所检查到的错误中，数量最多的。</p> 
+<p>Markdown 让你可以自然地书写字符，需要转换的由它来处理好了。如果你使用的 <code>&amp;</code>字符是 HTML 字符实体的一部分，它会保留原状，否则它会被转换成<code>&amp;amp;</code>。所以你如果要在文档中插入一个版权符号
+ <g-emoji alias="copyright" fallback-src="https://assets-cdn.github.com/images/icons/emoji/unicode/00a9.png" ios-version="6.0">
+  &copy;️
+ </g-emoji>,你可以这样写：<code>&amp;copy;</code> Markdown 会保留它不动。而若你写：<code>AT&amp;T</code> Markdown 就会将它转为：<code>AT&amp;amp;T</code>。类似的状况也会发生在 <code>&lt;</code>符号上，因为 Markdown 允许 兼容 HTML ，如果你是把<code>&lt;</code>符号作为 HTML 标签的定界符使用，那 Markdown 也不会对它做任何转换，但是如果你写：<code>4 &lt; 5</code>Markdown 将会把它转换为：<code>4 &amp;lt; 5</code></p> 
+<h2> <a id="一markdown区块元素" class="anchor" href="#%E4%B8%80markdown%E5%8C%BA%E5%9D%97%E5%85%83%E7%B4%A0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>一、Markdown区块元素</h2> 
+<p>一个 Markdown 段落是由一个或多个连续的文本行组成，它的前后要有一个以上的空行（空行的定义是显示上看起来像是空的，便会被视为空行。比方说，若某一行只包含空格和制表符，则该行也会被视为空行）。<strong>普通段落不该用空格或制表符来缩进</strong>。</p> 
+<p>“由一个或多个连续的文本行组成”这句话其实暗示了 Markdown 允许段落内的强迫换行（插入换行符），这个特性和其他大部分的 text-to-HTML 格式不一样（包括 Movable Type 的‘Convert Line Breaks’选项），其它的格式会把每个换行符都转成 <code>&lt;br/&gt;</code>标签。如果你确实想要依赖 Markdown 来插入 <code>&lt;br/&gt;</code>标签的话，在插入处先按入两个以上的空格然后回车。</p> 
+<h3> <a id="1段落和换行" class="anchor" href="#1%E6%AE%B5%E8%90%BD%E5%92%8C%E6%8D%A2%E8%A1%8C" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.段落和换行</h3> 
+<h3> <a id="1标题" class="anchor" href="#1%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.标题</h3> 
+<h1> <a id="一级标题" class="anchor" href="#%E4%B8%80%E7%BA%A7%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>一级标题</h1> 
+<h2> <a id="二级标题" class="anchor" href="#%E4%BA%8C%E7%BA%A7%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>二级标题</h2> 
+<h3> <a id="三级标题" class="anchor" href="#%E4%B8%89%E7%BA%A7%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>三级标题</h3> 
+<h4> <a id="四级标题" class="anchor" href="#%E5%9B%9B%E7%BA%A7%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>四级标题</h4> 
+<h5> <a id="五级标题" class="anchor" href="#%E4%BA%94%E7%BA%A7%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>五级标题</h5> 
+<h6> <a id="六级标题" class="anchor" href="#%E5%85%AD%E7%BA%A7%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>六级标题</h6> 
+<h3> <a id="2区块引用" class="anchor" href="#2%E5%8C%BA%E5%9D%97%E5%BC%95%E7%94%A8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.区块引用</h3> 
+<p>Markdown 标记区块引用是使用类似 email 中用 &gt; 的引用方式。 以下就是一段区块引用：</p> 
+<blockquote> 
+ <p>日照香炉生紫烟<br /> 遥看瀑布挂前川<br /> 飞流直下三千尺<br /> 疑是银河落九天</p> 
+</blockquote> 
+<p>Markdown 也允许你偷懒只在整个段落的第一行最前面加上 &gt; ：</p> 
+<blockquote> 
+ <p>慈母手中线，游子身上衣。<br /> 临行密密缝，意恐迟迟归。<br /> 谁言寸草心，报得三春晖。</p> 
+</blockquote> 
+<p>区块引用可以嵌套（例如：引用内的引用），只要根据层次加上不同数量的 &gt; ：</p> 
+<blockquote> 
+ <p>This is the first level of quoting.</p> 
+ <blockquote> 
+  <p>This is nested blockquote.</p> 
+ </blockquote> 
+ <p>Back to the first level.</p> 
+</blockquote> 
+<p>引用的区块内也可以使用其他的 Markdown 语法，包括标题、列表、代码区块等：</p> 
+<blockquote> 
+ <h2> <a id="这是一个标题" class="anchor" href="#%E8%BF%99%E6%98%AF%E4%B8%80%E4%B8%AA%E6%A0%87%E9%A2%98" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>这是一个标题。</h2> 
+ <ol> 
+  <li>这是第一行列表项。</li> 
+  <li>这是第二行列表项。</li> 
+ </ol> 
+ <p>给出一些例子代码：</p> 
+ <pre><code>return shell_exec(&quot;echo $input | $markdown_script&quot;);
+</code></pre> 
+</blockquote> 
+<h3> <a id="3列表" class="anchor" href="#3%E5%88%97%E8%A1%A8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.列表</h3> 
+<h4> <a id="31-无序列表" class="anchor" href="#31-%E6%97%A0%E5%BA%8F%E5%88%97%E8%A1%A8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.1 无序列表</h4> 
+<p>无序列表使用星号、加号或是减号作为列表标记：</p> 
+<ul> 
+ <li>第一列</li> 
+ <li>第二列</li> 
+ <li>第三列</li> 
+</ul> 
+<ul> 
+ <li>第四列</li> 
+ <li>第五列</li> 
+ <li>第六列</li> 
+</ul> 
+<ul> 
+ <li>第七列</li> 
+ <li>第八列</li> 
+ <li>第九列</li> 
+</ul> 
+<h4> <a id="32-有序列表" class="anchor" href="#32-%E6%9C%89%E5%BA%8F%E5%88%97%E8%A1%A8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.2 有序列表</h4> 
+<p>有序列表则使用数字接着一个英文句点，很重要的一点是，你在列表标记上使用的数字并不会影响输出的 HTML结果。重点在于，你可以让 Markdown 文件的列表数字和输出的结果相同，或是你懒一点，你可以完全不用在意数字的正确性。</p> 
+<ol> 
+ <li>第一列</li> 
+ <li>第二列</li> 
+ <li>第三列</li> 
+ <li>第四列</li> 
+ <li>第五列</li> 
+ <li>第六列</li> 
+ <li>第七列</li> 
+ <li>第八列</li> 
+ <li>第九列</li> 
+</ol> 
+<p>注意：如果你的文档中需要像下面这样的开头：</p> 
+<pre><code>    1986. What a great season.   
+</code></pre> 
+<p>换句话说，也就是在行首出现<strong>数字-句点-空格</strong>，要避免这样的状况，你可以在句点前加上反斜线。</p> 
+<pre><code>    1986\. What a great season.  
+</code></pre> 
+<h3> <a id="4代码区块" class="anchor" href="#4%E4%BB%A3%E7%A0%81%E5%8C%BA%E5%9D%97" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.代码区块</h3> 
+<p>和程序相关的写作或是标签语言原始码通常会有已经排版好的代码区块，通常这些区块我们并不希望它以一般段落文件的方式去排版，而是照原来的样子显示，Markdown 会用 <code>&lt;pre&gt;</code>和 <code>&lt;code&gt;</code>标签来把代码区块包起来。一个代码区块会一直持续到没有缩进的那一行（或是文件结尾）。</p> 
+<pre><code>    public static void main(String[] args){
+        System.out.println(&quot;Hello, world !&quot;);
+    }
+</code></pre> 
+<h4> <a id="5分隔线" class="anchor" href="#5%E5%88%86%E9%9A%94%E7%BA%BF" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>5.分隔线</h4> 
+<p>你可以在一行中用三个以上的星号、减号、底线来建立一个分隔线，行内不能有其他东西。你也可以在星号或是减号中间插入空格。下面每种写法都可以建立分隔线：</p> 
+<hr /> 
+<hr /> 
+<hr /> 
+<hr /> 
+<hr /> 
+<hr /> 
+<h2> <a id="二区段元素" class="anchor" href="#%E4%BA%8C%E5%8C%BA%E6%AE%B5%E5%85%83%E7%B4%A0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>二、区段元素</h2> 
+<h3> <a id="1链接" class="anchor" href="#1%E9%93%BE%E6%8E%A5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>1.链接</h3> 
+<p>Markdown 支持两种形式的链接语法： 行内式和引用式两种形式。不管是哪一种，链接文字都是用 [方括号] 来标记。要建立一个行内式的链接，只要在方块括号后面紧接着圆括号并插入网址链接即可，如果你还想要加上链接的 title 文字，只要在网址后面，用双引号把 title 文字包起来即可，例如：</p> 
+<pre><code>    This is [an example](http://example.com/ &quot;Title&quot;) inline link.  
+    [This link](http://example.net/) has no title attribute.
+</code></pre> 
+<p>引用式的链接是在链接文字的括号后面再接上另一个方括号，而在第二个方括号里面要填入用以辨识链接的标记：</p> 
+<pre><code>    This is [an example][id] reference-style link.  
+</code></pre> 
+<p>接着，在文件的任意处，你可以把这个标记的链接内容定义出来：</p> 
+<pre><code>    [id]: http://example.com/  &quot;Optional Title Here&quot;  
+</code></pre> 
+<p>链接内容定义的形式为：</p> 
+<ul> 
+ <li>方括号（前面可以选择性地加上至多三个空格来缩进），里面输入链接文字</li> 
+ <li>接着一个冒号</li> 
+ <li>接着一个以上的空格或制表符</li> 
+ <li>接着链接的网址</li> 
+ <li>选择性地接着 title 内容，可以用单引号、双引号或是括弧包着</li> 
+</ul> 
+<p>下面这三种链接的定义都是相同：</p> 
+<pre><code>    [foo]: http://example.com/  &quot;Optional Title Here&quot;
+    [foo]: http://example.com/  'Optional Title Here'
+    [foo]: http://example.com/  (Optional Title Here)
+</code></pre> 
+<h3> <a id="2强调-黑体斜体删除" class="anchor" href="#2%E5%BC%BA%E8%B0%83-%E9%BB%91%E4%BD%93%E6%96%9C%E4%BD%93%E5%88%A0%E9%99%A4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.强调 （黑体、斜体、删除）</h3> 
+<p>Markdown使用 * 和 _ 来标记要强调的文字，如果要在文字前后直接插入普通的星号或底线，你可以用反斜线。<strong>同时如果你的 * 和 _ 两边都有空白的话，它们就只会被当成普通的符号</strong>。</p> 
+<h4> <a id="21-强调效果" class="anchor" href="#21-%E5%BC%BA%E8%B0%83%E6%95%88%E6%9E%9C" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.1 强调效果</h4> 
+<p><strong>黑体强调效果</strong><br /> <em>斜体强调效果</em><br /> <del>删除强调效果</del></p> 
+<h4> <a id="22-混合强调效果" class="anchor" href="#22-%E6%B7%B7%E5%90%88%E5%BC%BA%E8%B0%83%E6%95%88%E6%9E%9C" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>2.2 混合强调效果</h4> 
+<p><em><strong>黑体加斜体强调效果</strong></em><br /> <strong><del>黑体加删除强调效果</del></strong><br /> <em><del>斜体加删除效果</del></em></p> 
+<p><em><strong><del>黑体、斜体加删除强调效果</del></strong></em></p> 
+<h3> <a id="3行内代码" class="anchor" href="#3%E8%A1%8C%E5%86%85%E4%BB%A3%E7%A0%81" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>3.行内代码</h3> 
+<p>如果要标记一小段行内代码，你可以用反引号把它包起来(`),如果要在代码区段内插入反引号，你可以用多个反引号来开启和结束代码区段:</p> 
+<pre><code>    I`m Leo  
+    This is a test for symbol (`) `foo`  
+    thanks  
+</code></pre> 
+<h3> <a id="4图片" class="anchor" href="#4%E5%9B%BE%E7%89%87" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>4.图片</h3> 
+<p>Markdown 使用一种和链接很相似的语法来标记图片，同样也允许两种样式： 行内式和引用式。行内式的图片语法看起来像是：</p> 
+<pre><code>    ![Alt text](/path/to/img.jpg)  
+    ![Alt text](/path/to/img.jpg &quot;Optional title&quot;)
+</code></pre> 
+<p>详细叙述如下：</p> 
+<ul> 
+ <li>一个惊叹号 !</li> 
+ <li>接着一个方括号，里面放上图片的替代文字</li> 
+ <li>接着一个普通括号，里面放上图片的网址，最后还可以用引号包住并加上 选择性的 ‘title’文字。</li> 
+</ul> 
+<p>引用式的图片语法则长得像这样：</p> 
+<pre><code>    ![Alt text][id]
+</code></pre> 
+<p>[ id ]是图片参考的名称，图片参考的定义方式则和连结参考一样：</p> 
+<pre><code>    [id]: url/to/image  &quot;Optional title attribute&quot;  
+</code></pre> 
+<p>到目前为止， Markdown 还没有办法指定图片的宽高，如果你需要的话，你可以使用普通的 <code>&lt;img&gt;</code>标签。</p> 
+<h3> <a id="5反斜杠" class="anchor" href="#5%E5%8F%8D%E6%96%9C%E6%9D%A0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>5.反斜杠</h3> 
+<p>Markdown 可以利用反斜杠来插入一些在语法中有其它意义的符号，例如： * 本来是有强调效果的，但是你知识想在文字两端插入 * 号本身，不需要强调效果，就可以使用反斜线加上有其他语义的符号：</p> 
+<p>*literal asterisks*</p> 
+<p>Markdown 支持以下这些符号前面加上反斜杠来帮助插入普通的符号：</p> 
+<pre><code>\   反斜线
+`   反引号
+*   星号
+_   底线
+{}  花括号
+[]  方括号
+()  括弧
+#   井字号
++   加号
+-   减号
+.   英文句点
+!   惊叹号
+</code></pre> 
+<h3> <a id="附录a" class="anchor" href="#%E9%99%84%E5%BD%95a" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>附录A.</h3> 
+<p>在GitHub pull request, Issues， commit message， markdown文档中可以加入表情符，使用语法为<code>:name_of_emoji:</code>。<a href=".emoji.md.html">详细信息请参考</a></p>
+</body>
+</html>
