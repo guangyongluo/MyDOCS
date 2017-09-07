@@ -17,5 +17,19 @@ git config --global core.safe false
 git log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short  
 ```
 
+#### 设置git别名
+```
+git config –-global alias.ci commit
+```
+
+#### 设置Windows Git Bash的HTTP协议凭证托管
+```
+git config –-global credential.helper wincred
+```
+
+#### 生成SSH协议的公私密钥对
+```
+ssh-Keygen -t rsa -C "your email"
+```
 
 
