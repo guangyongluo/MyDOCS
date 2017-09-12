@@ -32,6 +32,11 @@ git config –-global credential.helper wincred
 ssh-Keygen -t rsa -C "your email"
 ```
 
+#### 通过两个分支名查找到分支开始时的原始提交
+```
+git merge-base original-branch new-branch
+```
+
 #### 更改远程仓库协议
 ```
 git remote set-url origin "your git repository url"
