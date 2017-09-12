@@ -44,8 +44,29 @@ Git使用远程版本库和远程追踪分支来引用另一个版本库，远�
 此处的refspec可以这样解释：
 * 从本地版本库中，将源命名空间refs/heads/下发现的所有分支名，放在远程版本库的目标命名空间refs/heads/下的匹配分支中，使用相似的名字来命名。
 
-如果命令中没有明确指定的远程版本库，Git会假设你要使用origin。如果没有refspec，git push会将你的提交发送到远程版本库中你与上游版本库共有的所有分支。不在上游版本库中的任何本地分支都不会发送到上游；分支必须已经存在，并且名字匹配。因此，新分支必须显示地使用分支名来推送。之后，可以在默认情况下用简单的git push。
+>可以使用`git show-ref`查看当前版本库中的引用。使用`git ls-remote`版本库列出远程版本库的引用。  
 
-可以使用`git show-ref`查看当前版本库中的引用。使用`git ls-remote`版本库列出远程版本库的引用。  
+### 6 git pull 与 git push
 
-完整的`git pull`命令允许指定版本库和多个refspec：`git pull 版本库 refspec`。如果不在命令行上指定版本库，无论是通过Git URL还是间接通过远程版本库名，则使用默认的origin远程版本库。如果你没有在命令行上指定refspec，则使用远程版本库的抓取（fetch）refspec。如果指定版本库（）
+完整的`git pull`命令允许指定版本库和多个refspec：`git pull 版本库 refspec`。如果不在命令行上指定版本库，无论是通过Git URL还是间接通过远程版本库名，则使用默认的origin远程版本库。如果你没有在命令行上指定refspec，则使用远程版本库的抓取（fetch）refspec。如果指定版本库（直接或使用远程版本库），但是没有指定refspec，git会抓取远程版本库的HEAD引用。`git pull`操作有两个根本步骤，每个步骤都由独立的git命令实现。也就是说，`git pull`意味着先执行`git fetch`，然后执行`git merge`或`git rebase`。默认情况下第二步是merge。  
+
+抓取步骤：在最开始的抓取步骤中，Git先定位远程版本库。该远程版本库的信息在配置文件中：
+```
+[remote "origin"]
+    url = /path/to/remote/repo.git
+    fetch = +refs/heads/*:refs/remotes/origin/*
+```
+此外，由于没在命令行中指定refspec，Git会使用remote条目中的所有“fetch=”的行。也不必使用refs/heads/*的通配符来获取远程版本库的所有特性分支。可以明确地指出它们。
+
+合并或变基步骤：Git使用一种特殊类型的合并操作快进（fast-forward），合并远程追踪分支origin/master的内容到你的本地追踪分支master分支。配置信息如下：
+```
+[branch "master"]
+    remote = origin
+    merge = refs/heads/master
+```
+以上配置信息解释如下:当master分支是当前检出分支时，使用origin作为fetch（或pull）操作过程中获取更新的默认远程版本库。此外，在`git pull`的merge步骤中，用远程版本库中的refs/heads/master作为默认分支合并到master分支。
+
+`git push`操作是把当前master分支推送到origin远程版本库的简便方法。这个操作有两步，第一步：提取当前master分支的变更，将它们捆绑在一起，发送到名为origin的远程版本库中。同时将这些变更添加到当前版本库的远程追踪分支origin/master中。实际上就是Git使原本在当前master分支的变更发送到远程版本库，然后再请求把它们放回origin/master远程追踪分支。
+
+### 7 追踪分支
+克隆版本库的master分支可以被认为是origin/master分支引进的开发扩展，Git通过使用一致的引用名称来很容易地创建本地和远程追踪分支对。使用远程追踪分支名的一个简单的检出请求会导致创建一个新的本地追踪分支，并与该远程追踪分支相关联。

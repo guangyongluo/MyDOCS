@@ -36,3 +36,13 @@ ssh-Keygen -t rsa -C "your email"
 ```
 git remote set-url origin "your git repository url"
 ```
+
+#### 删除远程版本库和其关联的远程追踪分支
+```
+git remote rm origin
+```
+
+#### 删除版本库中哪些陈旧的远程追踪分支
+```
+git remote prune origin
+```
