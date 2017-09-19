@@ -51,3 +51,13 @@ git remote rm origin
 ```
 git remote prune origin
 ```
+
+#### 逐行查看文件修改历史
+```
+git blame file-name
+```
+
+#### 删除没有跟踪的文件
+```
+git clean -f
+```
