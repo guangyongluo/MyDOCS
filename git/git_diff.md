@@ -21,3 +21,16 @@ Git中的命令`git diff`像UNIX系统中的`diff`命令一样可以进行文件
 * --color 这个选项会使输出结果使用多种颜色显示，一种颜色显示diff中的一种变化。
 
 >**当你的工作目录、索引和版本库都不相同时，请记住`git commit`永远只会提交在索引中的状态**
+
+### git diff 和 git log
+`git diff`不关心它比较的文件的历史，也不关心分支，而`git log`特别关注一个文件是如何变成另一个的。`git log`和`git diff`这两个命令都接受commit1..commit2这样的参数来产生一个对称差(symmetrical difference)。然而，跟之前一样，它们会产生不同的结果。命令`git log commit1..commit2`显示的是各自可达又不同时可达的提交。对称差在`git diff`中会显示commit2与commit1的共同祖先（或者合并基础[merge base]之间的差异）。
+
+### git diff限制路径
+默认情况下，`git diff`操作会基于从给定树对象的根开始的整个目录结构。然而，可以使用和`git log`中相同的路径限制(path limiting)手段来限制`git diff`只输出版本库的一个子集。可以显示某个目录中的文件变化，也可以显示某个确定文件的变化。参看如下的例子：
+```
+#只显示Documentation的更改
+git diff --stat master~5 master Documentation
+#只显示Documentation/git-add.txt
+git diff --stat master~5 master Documnetation/git-add.txt
+```
+**在Git中每个提交都包含一整棵树，也就是该提交包含的文件列表。每个树都是独立的。**
