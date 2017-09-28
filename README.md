@@ -6,3 +6,4 @@
 ## 文档目录
 
 * 2017-09-05 [Markdown文档第一版](markdown/user_guide.md)完成
+* 2017-09-28 Git相关文档完成
