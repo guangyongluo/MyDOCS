@@ -61,3 +61,13 @@ git blame file-name
 ```
 git clean -f
 ```
+
+#### 查找悬挂的对象
+```
+git fsck
+```
+
+#### 修改提交颗粒度
+```
+git add -p
+```
