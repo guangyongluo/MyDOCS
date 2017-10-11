@@ -6,3 +6,6 @@ Maven主要服务于基于Java平台的项目构建、依赖管理和项目管�
 ### Maven项目核心 pom.xml(Project Object Model)
 在pom.xml文件中代码的第一行指定了xml文档的版本和编码方式。紧接着就是project元素，project是所有pom.xml的根元素，它同时声明了一些POM相关的命名空间及xsd元素。根元素下的第一个子元素modelVersion指定了当前POM模型的版本，对于maven 2和maven 3来说，它只能是4.0.0。  
 在pom.xml文件中最重要的就是项目的基本坐标，在Maven的世界里，任何的jar、pom或者war都是以基于这些基本坐标进行区分的，它们是groupId、artifactId和version。groupId定义了项目属于哪个组，这个组往往和项目所在的组织和公司存在联系。artifactId定义了当前Maven项目在组中唯一的ID。而version指定了项目当前的版本。
+
+### Maven坐标与依赖
+Maven的一大功能是管理项目依赖。为了能自动化地解析任何一个Java构件，Maven就必须将它们唯一标识，这就依赖管理的底层基础——坐标。Maven定义了这样一组坐标：世界上任何一个构件都可以使用Maven坐标唯一标识，Maven坐标的元素包括groupId、artifactId、version、packaging、classifier。只要我们提供正确的坐标元素，Maven就能找到对应的构件。
