@@ -20,5 +20,5 @@
 
 ###### 4.清理缓存并生成新的缓存
 
-清除缓存：`yum clean all`
+清除缓存：`yum clean all`  
 生成缓存：`yum makecache`
