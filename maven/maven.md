@@ -44,3 +44,103 @@ Maven的一大功能是管理项目依赖。为了能自动化地解析任何一
 1. 排除依赖：传递性依赖会给项目隐式地引入很多依赖，这是极大地简化了项目依赖的管理，但是有些时候这种依赖也会带来问题。当我们不希望传递的依赖被解析而想替换某个传递性依赖，可以使用exclusions元素声明排除依赖，exclusions可以包含一个或多个exclusion子元素，因此可以排除一个或者多个传递性依赖。需要注意的是，声明exclusion的时候只需要groupId和artifactId，而不需要version元素，这是因为只需要groupId和artifactId就能唯一定位依赖图中的某个依赖。换句话说，Maven解析后的依赖中，不可能出现groupId和artifactId相同，但是version不同的两个依赖。(依赖调解)
 2. 归类依赖：使用Maven属性，首先使用properties元素定义Maven属性，在定义了属性之后可以使用美元符合大括弧的方式来引用Maven属性。
 3. 优化依赖：Maven会自动解析所有项目的直接依赖和传递依赖，并且根据规则正确判断每个依赖的范围，对于一些依赖冲突，也能进行调节，以确保任何一个构件只有唯一的版本在依赖中存在。在这些工作之后，最后得到的那些依赖被称为已解析依赖(Resolved Dependency)。使用dependency:list和dependency:tree可以帮助我们详细了解项目中所有依赖的具体信息，在此基础上，还有dependency:analyze工具可以帮助分析当前项目的依赖。尤其是使用`mvn dependency:analyze`该结果中重要的是两个部分。首先是Used undeclared dependencies，意味项目中使用到的，但是没有显示声明的依赖，这种依赖意味着潜在的风险，当前项目直接在使用它们，例如有很多相关的Java import声明，而这种依赖是通过直接依赖传递进来的，当升级直接依赖的时候，相关传递性依赖的版本也可能发生变化，这种变化不易察觉，但是有可能导致当前项目出错。例如由于接口的改变，当前项目中的相关代码无法编译。这种隐藏的、潜在的威胁一旦出现，就往往需要耗费大量的时间来查明真相。因此，显示声明任何项目中直接用到的依赖。结果中还有一个重要的部分是Unused declared dependencies，意指项目中未使用的，但是显示声明的依赖。需要注意的是，对于这样一类依赖，我们不应该简单地直接删除其声明，而是应该仔细分析。由于dependency:analyze只会分析编译主代码和测试代码需要用到的依赖，一些执行测试和运行时需要的依赖就发现不了。因此一定要小心测试找到没用的依赖再删除。
+
+### Maven仓库
+在Maven世界里，任何一个依赖、插件或者项目构建的输出，都可以称为构建。得益于坐标机制，任何Maven项目使用任何一个构件的方式都是完全相同的。在此基础上，Maven可以在某个位置统一储存所有Maven项目共享的构件，这个统一的位置就是仓库。其实Maven项目将不再各自存储依赖文件，它们只需要声明这些依赖的坐标，在需要的时候(例如，编译项目的时候需要将依赖加入到classpath中)，Maven会自动根据坐标找到仓库中的构件，并使用它们。  
+
+对于Maven来说，仓库分为两类：本地仓库和远程仓库。当Maven根据坐标寻找到构建时，它首先会查看本地仓库，如果本地仓库存在此构建，则直接使用；如果本地仓库不存在此构件，或者需要查看是否有更新的构件版本，Maven就会去远程仓库查找，发现需要的构件之后，下载到本地仓库再使用。如果本地仓库和远程仓库都没有需要的构件，Maven就会报错。中央仓库是Maven自带的远程仓库，它包含了绝大部分开源的构件。在默认配置下，当本地仓库没有Maven需要的构件的时候，它就会尝试从中央仓库下载。私服是另一种特殊的远程仓库，为了节省宽带和时间，应该在局域网内架设一个私有的仓库服务器，用其代理所有外部的远程仓库。内部项目还能部署到私服上供其他项目使用。  
+
+* 本地仓库：用户可以自定义本地仓库的目录地址。编辑~/.m2/setting.xml，设置localRepository元素的值为想要的仓库地址。setting.xml文件可以从Maven的安装目录复制$M2_HOME/conf/setting.xml文件再进行编辑。一个构件只有在本地仓库中才能让其他的Maven项目使用。有两种情况将Maven构件放到本地仓库：1.从远程仓库下载；2.将本地的项目构建安装到Maven仓库中。
+* 远程仓库：安装好Maven后，如果不执行任何Maven命令，本地仓库目录是不存在的。当用户输入第一条Maven命令之后，Maven才会创建本地仓库，然后根据配置和需要，从远程仓库下载至本地仓库。
+* 私服：私服是一种特殊的远程仓库，它是架设在局域网内的仓库服务，私服代理广域网上的远程仓库，供局域网内的Maven用户使用。当Maven需要下载构件的时候，它从私服请求，如果私服上不存在该构件，则从外部的远程仓库下载，缓存在私服上之后，再为Maven的下载请求提供服务。此外，一些无法从外部仓库下载到的构件也能从本地上传到私服上供大家使用。
+
+配置远程仓库：
+```
+<project>
+    ...
+    <repositories>
+        <id>jboss</id>
+        <name>JBoss Repository</name>
+        <url>http://repository.jboss.com/maven2/</url>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </repositories>
+</project>
+```
+对于以上远程仓库配置的解释：声明了一个id为jboss，名称为JBoss Repository的仓库。任何一个仓库声明的id必须是唯一的，尤其需要注意的是，Maven自带的中央仓库使用的id为central，如果其他的仓库声明也使用该id，就会覆盖中央仓库的配置。url值指向了仓库的地址，一般来说，该地址都基于http协议，Maven用户都可以在浏览器中打开仓库地址浏览构件。relases的enabled值为true，表示开启JBoss仓库的发布版本下载支持，而snapshots的enabled值为false，表示关闭JBoss仓库的快照版本的下载支持。因此，根据该配置，Maven只会从JBoss仓库下载发布版本的构件，而不会下载快照版的构件。  
+
+对于releases和snapshots来说，除了enabled，它们还包含另外两个子元素updatePolicy和checksumPolicy:  
+```
+<snapshots>
+    <enabled>true</enabled>
+    <updatePolicy>daily</updatePolicy>
+    <checksumPolicy>ignore</checksumPolicy>
+</snapshots>
+```
+元素updatePolicy用来配置Maven从远程仓库检查更新的频率，默认的值是daily，表示Maven每天检查一次。其他可用的值包括：never-从不检查更新；always-每天构件都检查更新；interval：X-每隔X分钟检查一次更新(X为任意整数)。元素checksumPolicy用来配置Maven检查检验和文件的策略。当构件被部署到Maven仓库中时，会同时部署对应的校验和文件。在下载构件时，Maven会验证校验和文件，当checksumPolicy的值为默认的warn时，Maven会在执行构件校验和验证失败时输出警告信息，其他可用的值包括：fail-Maven遇到校验和错误就让构件失败；ignore-使Maven完全忽略校验和错误。
+
+### 远程仓库的认证
+配置认证信息和配置仓库信息不同，仓库信息可以直接配置在POM文件中，但是认证信息必须配置在settings.xml文件中。这是因为POM往往是被提交到代码仓库中供所有成员访问的，而settings.xml一般只放在本机。因此，在settings.xml中配置认证信息更为安全。例如：
+```
+<settings>
+    <servers>
+        <server>
+            <id>my-proj</id>
+            <username>reop-user</username>
+            <password>repo-pwd</password>
+        </server>
+    </servers>
+</settings>
+```
+这里关键是id元素，settings.xml中的server元素的id必须与POM中需要认证的repository元素的id完全一致。换句话说，正是这个id将认证信息与仓库配置联系在一起。
+
+部署至远程仓库：Maven除了能对项目进行编译、测试、打包外，还能将项目生成的构件部署到仓库中。配置distributionManagement元素如下：
+```
+<project>
+    <distributionManagement>
+        <repository>
+            <id>proj-releases</id>
+            <name>Proj Release Repository</name>
+            <url>http://192.168.1.100/content/repositories/proj-releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>proj-snapshots</id>
+            <name>Proj Snapshot Repository</name>
+            <url>http://192.168.1.100/content/repositories/proj-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+</project>
+```
+distributionManagement包含repository和snapshotRepository子元素，前者表示发布版本构件的仓库，后者表示快照版本的仓库。这两个元素下都需要配置id、name和url，id为该远程仓库的唯一标识，name是为了方便人阅读，关键的url表示该仓库的地址。  
+
+### 快照版本的实践
+快照版本只应该在组织内部的项目或模块间依赖使用，因为这时，组织对于这些快照版本的依赖具有完全的理解及控制权。项目不应该依赖与任何组织外部的快照版本依赖，由于快照版本的不稳定性，这样的依赖会造成潜在的危险。在发布过程中，Maven会自动为构建打上时间戳。比如2.1-20171228-153833-13就表示2017年12月28日15时38分33秒的第13次快照。有了该时间戳，Maven就能随时找到仓库中该构件2.1-SNAPSHOT版本最新的文件。默认情况下，Maven每天检查一次更新(由仓库配置的updatePolicy控制)，用户也可以使用命令行-U参数强制让Maven检查更新，如mvn clean install -U。当依赖的版本设为快照版本的时候，Maven也需要检查更新，这时，Maven会检查仓库元数据groupId/artifactId/version/maven-metadata.xml，该XML文件的snapshot元素包含了timestamp和buildNumber两个子元素，分别代表了这一快照的时间戳和构件号，基于这两个元素可以得到该仓库中此快照的最新构件版本实际值。通过合并所有远程仓库和本地仓库的元数据，Maven就能知道所有仓库中该构件的最新快照。
+
+### 镜像配置
+如果仓库X可以提供仓库Y存储的所有内容，那么就可以认为X是Y的一个镜像。换句话说，任何一个可以从仓库Y获得的构件，都能够从它的镜像中获得。配置中央仓库的镜像，可以编辑settings.xml文件。
+```
+<settings>
+    <mirrors>
+        <mirror>
+            <id>maven.net.cn</id>
+            <name>one of the central mirrors in China</name>
+            <url>http://maven.net.cn/content/groups/public/</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
+</settings>
+```
+在这个例子中mirrorOf的值为central，表示给配置为中央仓库的镜像，任何对中央仓库的请求都会转至该镜像，用户也可以使用同样的方法配置其他仓库的镜像。需要注意的是，由于镜像仓库完全屏蔽了被镜像仓库，当镜像仓库不稳定时或者停止服务时候，Maven仍然无法请问被镜像仓库，因而将无法下载构件。
+
+##### 几个重要的仓库搜索服务地址
+
+[Sonatype Nexus](http://repository.sonatype.org/ "Sonatype Nexus")：Nexus是当前最流行的开源Maven仓库管理软件。     
+[MVNbrowser](http://www.mvnbrowser.com "MVNbrowser")：只能提供关键字搜索功能。  
+[MVNrepository](http://mvnrepository "MVNrepository"): 提供关键字的搜索、依赖声明代码片段、构建下载、依赖与被依赖关系信息、构件所包含信息等功能。
+
+### 生命周期
+
