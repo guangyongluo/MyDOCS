@@ -143,4 +143,75 @@ distributionManagement包含repository和snapshotRepository子元素，前者表
 [MVNrepository](http://mvnrepository "MVNrepository"): 提供关键字的搜索、依赖声明代码片段、构建下载、依赖与被依赖关系信息、构件所包含信息等功能。
 
 ### 生命周期
+Maven的生命周期就是为了对所有的构建过程进行抽象和统一。Maven从大量项目和构建工具中学习和反思，然后总结了一套高度完善的、易扩展的生命周期。这个生命周期包含了项目的清理、初始化、编译、测试、打包、集成测试、验证、部署和站点生成几乎所有构建步骤。Maven生命周期是抽象的，这意味着生命周期本身不做任何实际的工作，在Maven的设计中，实际的任务都交由插件来完成。Maven拥有三套相互独立的生命周期，它们分别是clean、default和site。clean生命周期的目的是清理项目，default生命周期的目的是构件项目，而site生命周期的目的是建立项目站点。每个生命周期包含一些阶段(phase)，这些阶段是有顺序的，并且后面的阶段依赖于前面的阶段，用户和Maven最直接的交互就是调用这些生命周期阶段。  较之与生命周期阶段的前后依赖关系，三套生命周期本身是相互独立的，用户可以仅仅调用clean生命周期的某个阶段，或者仅仅调用default生命周期的某个阶段，而不会对其他生命周期生产任何影响。以下列出三套独立生命周期的所有阶段：
 
+##### clean生命周期
+1. pre-clean 
+2. clean 清理上一次构建生成的文件。
+3. post-clean
+
+##### default生命周期
+1. vaidate
+2. initialize
+3. generate-sources
+4. process-sources 处理项目主资源文件 /src/main/resources
+5. generate-resources
+6. process-resources 
+7. compile 编译项目的主源码  /src/main/java
+8. process-clasees
+9. generate-test-sources
+10. process-test-sources 处理项目测试资源文件 /src/test/resources
+11. generate-test-resources
+12. process-test-resources
+13. test-compile 编译项目的测试代码 /src/test/java
+14. process-test-classes
+15. test 使用单元测试框架运行测试，测试代码不会打包和部署。
+16. prepare-package
+17. package接受编译好的代码，打包成可发布的格式。
+18. pre-integration-test
+19. integration-test
+20. post-integration-test
+21. verify
+22. install 将包安装到Maven本地仓库，供本地其他Maven项目使用。
+23. deploy 将最终的包复制到远程仓库，供其他开发人员和Maven项目使用。
+
+##### site生命周期
+1. pre-site
+2. site 生成项目站点文档。
+3. post-site
+4. site-deploy 将生成的项目站点发布到服务器上。
+
+### 插件目标与绑定
+Maven的核心仅仅定义了抽象的生命周期，具体的任务是交由插件完成的，插件以独立的构件形式存在，因此，Maven核心的分发包只有不到3MB大小，Maven会在需要的时候下载并使用相关插件。对于插件本身，为了能够复用代码，它往往能够完成多个任务。一个插件完成相关的多个功能这样每个功能就是一个插件目标。Maven生命周期与插件相互绑定，用以完成实际的构建任务。具体而言，是生命周期的阶段与插件的目标相互绑定，以完成某个具体的构建任务。Maven在核心为一些主要的生命周期绑定了很多插件的目标，当用户通过命令调用生命周期的阶段的时候，对应的插件目标就会执行相应的任务。以下表格列出内置绑定：
+
+表1 clean生命周期阶段与插件目标的绑定关系  
+
+|生命周期阶段|插件目标|
+|:---------:|:----------------:|
+|pre-clean||
+|clean|maven-clean-plugin:clean|
+|post-clean||
+
+表2 default生命周期的内置插件绑定关系及具体任务  
+
+
+|生命周期阶段|差价目标|执行任务|
+|:-----------------:|:-----------------:|:---------------------------------:|
+|process-resources|maven-resources-plugin:resources|复制主资源文件至主输出目录|
+|compile|maven-compiler-plugin:compile|编译主代码至主输出目录|
+|process-test-resources|maven-resources-plugin:testResources|复制测试资源文件至测试输出目录|
+|test-compile|maven-compiler-plugin:testCompile|编译测试代码至测试输出目录|
+|test|maven-surefile-plugin:test|执行测试用例|
+|package|maven-jar-plugin:jar|创建项目jar包|
+|install|maven-install-plugin:install|将项目输出构件安装到本地仓库|
+|deploy|maven-deploy-pluing:deploy|将项目输出构件部署到远程仓库|
+
+
+表3 site生命周期阶段与插件目标绑定关系  
+
+|生命周期阶段|插件目标|
+|:--------:|:----------------:|
+|pre-site||
+|site|maven-site-plugin:site|
+|post-site||
+|site-deploy|maven-site-plugin:deploy|
