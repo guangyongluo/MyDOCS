@@ -214,4 +214,52 @@ Maven的核心仅仅定义了抽象的生命周期，具体的任务是交由插
 |pre-site||
 |site|maven-site-plugin:site|
 |post-site||
-|site-deploy|maven-site-plugin:deploy|
+|site-deploy|maven-site-plugin:deploy|  
+
+##### 自定义绑定
+除了内置绑定外，用户还能自己选择将某个插件目标绑定到生命周期的某个阶段上，这种自定义绑定方式能让Maven项目在构件过程中执行更多更富特色的任务。具体配置如下：
+```
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1.1</version>
+            <executions>
+                <execution>
+                    <id>attach-sources</id>
+                    <phase>verify</phase>
+                    <goals>
+                        <goal>jar-no-fork</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+上述配置中，除了基本的坐标声明外，还有插件执行配置，executions下每个execution子元素可以用来配置执行一个任务。该例中配置了一个id为attah-sources的任务，通过phase配置，将其绑定到verify生命周期阶段上，再通过goals配置指定要执行的插件目标。有时候，即使不通过phase元素配置生命周期阶段，插件目标也能够绑定到生命周期中去。因为有很多插件的目标在编写时已经定义了默认绑定阶段。
+
+##### 插件配置
+1. 很多插件目标的参数都支持从命令行配置，用户可以在Maven命令中使用-D参数，帮伴随一个参数键=参数值的形式，来配置插件目标参数。
+2. 有些参数的值从项目创建到项目发布都不会改变，或者说很少改变，对于这种情况，在POM文件中一次性配置就显然比重复再命令行输入要方便。这种在POM对插件参数进行全局配置如配置JDK编译1.8版本的源文件：
+
+```
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.1</version>
+            <configuration>
+                <source>1.8</source>
+                <target>1.8</target>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+##### 获得插件信息的常用方式
+1. 使用maven-help-plugin的describe目标：`mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin:2.1`
+2. Maven还支持直接从命令行调用插件目标，这种方式是因为有些任务不适合绑定在生命周期上。`mven dependency:tree`
