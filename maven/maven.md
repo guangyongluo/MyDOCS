@@ -263,3 +263,60 @@ Maven的核心仅仅定义了抽象的生命周期，具体的任务是交由插
 ##### 获得插件信息的常用方式
 1. 使用maven-help-plugin的describe目标：`mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin:2.1`
 2. Maven还支持直接从命令行调用插件目标，这种方式是因为有些任务不适合绑定在生命周期上。`mven dependency:tree`
+
+### 集合与继承
+Maven聚合特性能够把项目的各个模块聚合在一起构建，而Maven的继承特性则能帮助抽取各个模块相同的依赖和插件等配置，在简化POM的同时，还能促进各个模块配置的一致性。一般来说，一个项目的子模块都应该使用同样的groupId，如果它们一起开发和发布，还应该使用同样的version，此外，它们的artifactId还应该使用一致的前缀，以方便同其他项目区分。  
+
+聚合的实际例子：
+```
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.juvenxu.mvnbook.account</groupId>
+	<artifactId>account-aggregator</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Account Aggregator</name>
+	<modules>
+		<module>account-email</module>
+		<module>account-persist</module>
+		<module>account-parent</module>
+	</modules>
+</project>
+```
+以上例子的解释：对于聚合模块来说，其打包方式packaging的值必须为pom，否则就无法构建。用户可以通过在一个打包方式为pom的Maven项目中声明任意数量的module元素来实现模块的聚合。这里每个module的值都是一个当前POM的相对目录。一般来说，为了方便快速定位内容，模块所处的目录名称应该与其artifactId一致，不过这不是Maven的要求，用户也可以将account-email项目放到email-account/目录下。这时，聚合的配置就需要相应地改为`<module>email-account</module>`。为了方便用户构件项目，通常将聚合模块放在项目目录的最顶层，其他模块则作为聚合块的子目录存在，这样当用户得到源码的时候，第一眼发现的就是聚合模块的POM，不用从多个模块中去寻找聚合模块来构建整个项目。account-aggregator的内容仅是一个pom.xml文件，他不像其他模块那样有src/main/java、src/test/java等目录。聚合模块仅仅是帮助聚合其他模块构建的工具，它本身并无实质内容。关于目录结构还需要注意的是，聚合模块的目录结构并非一定要是父子关系。如果使用平行目录结构，聚合模块的POM也需要做相应的修改，以指向正确的模块目录：
+```
+<modules>
+    <module>../account-email</module>
+    <module>../account-persist</module>
+</modules>
+```
+最后通过`mvn clean install`命令构建聚合后的项目，Maven会首先解析聚合模块POM、分析要构建的模块、并计算出一个反应堆构建顺序(Reactor Build Order)，然后根据这个顺序依次构建各个模块。
+
+面向对象设计中，程序员建立一种类的父子结构，然后在父类中声明一些字段和方法供子类继承，这样就可以做到“一处声明，多处使用”。类似地，我们需要创建POM的父子结构，然后再父POM中声明一些配置供子POM继承，以实现配置重用。由于父模块只是为了帮助消除配置的重复，因此它本身不包含除POM之外的项目文件，也就不需要src/main/java之类的文件夹了。以下是一个继承的例子：
+```
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>com.juvenxu.mvnbook.account</groupId>
+		<artifactId>account-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../account-parent/pom.xml</relativePath>
+	</parent>
+	
+	<artifactId>account-email</artifactId>
+	<name>Account Email</name>
+
+    <dependencies>
+    ...
+    </dependencies>
+    
+    <build>
+    ...
+    </build>
+    
+</project>
+```
+该例中parent子元素groupId、artifactId和version指定了父模块的坐标，这三个元素是必须的。元素relativePath表示父模块POM的相对路劲。当项目构建时，Maven会首先根据relativePath检查父POM，如果找不到，再从本地仓库查找。relativePath的默认值是../pom.xml，也就是说，Maven默认父POM在上一层目录下。
