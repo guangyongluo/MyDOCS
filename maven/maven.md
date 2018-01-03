@@ -264,7 +264,7 @@ Maven的核心仅仅定义了抽象的生命周期，具体的任务是交由插
 1. 使用maven-help-plugin的describe目标：`mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin:2.1`
 2. Maven还支持直接从命令行调用插件目标，这种方式是因为有些任务不适合绑定在生命周期上。`mven dependency:tree`
 
-### 集合与继承
+### 聚合与继承
 Maven聚合特性能够把项目的各个模块聚合在一起构建，而Maven的继承特性则能帮助抽取各个模块相同的依赖和插件等配置，在简化POM的同时，还能促进各个模块配置的一致性。一般来说，一个项目的子模块都应该使用同样的groupId，如果它们一起开发和发布，还应该使用同样的version，此外，它们的artifactId还应该使用一致的前缀，以方便同其他项目区分。  
 
 聚合的实际例子：
@@ -319,4 +319,178 @@ Maven聚合特性能够把项目的各个模块聚合在一起构建，而Maven�
     
 </project>
 ```
-该例中parent子元素groupId、artifactId和version指定了父模块的坐标，这三个元素是必须的。元素relativePath表示父模块POM的相对路劲。当项目构建时，Maven会首先根据relativePath检查父POM，如果找不到，再从本地仓库查找。relativePath的默认值是../pom.xml，也就是说，Maven默认父POM在上一层目录下。
+该例中parent子元素groupId、artifactId和version指定了父模块的坐标，这三个元素是必须的。元素relativePath表示父模块POM的相对路劲。当项目构建时，Maven会首先根据relativePath检查父POM，如果找不到，再从本地仓库查找。relativePath的默认值是../pom.xml，也就是说，Maven默认父POM在上一层目录下。正确设置relativePath非常重要。当开发团队直接签出一个包含父子模块关系的Maven项目。由于只关心其中一个子模块，它就直接到该模块的目录下执行构件，这个时候，父模块还没有被安装到本地仓库，因此如果子模块没有设置正确的relativePath，Maven将无法找到父POM，直接导致构件失败。在上例中POM没有为account-email声明groupId和version，不过这并不代表account-email没有groupId和version。实际上，这个子模块隐式地从父模块继承了这两个元素，这也就消除了一些不必要的配置。
+
+##### 可继承的POM元素
+* groupId：项目组ID，项目坐标的核心元素。
+* versioin：项目版本，项目坐标的核心元素。
+* description：项目的描述信息。
+* organization：项目的组织信息。
+* inceptionYear：项目的创始年份。
+* url：项目的URL地址。
+* developers：项目的开发者信息。
+* contributors：项目的贡献者信息。
+* distributionManagement：项目的部署配置。
+* issueManagement：项目的缺陷跟踪系统信息。
+* ciManagement：项目的持续集成信息信息。
+* scm：项目的版本控制系统信息。
+* mailingLists：项目的邮件列表信息。
+* properties：自定义的Maven属性。
+* dependencies：项目的依赖配置。
+* dependencyManagement：项目的依赖管理配置。
+* repository：项目的仓库配置。
+* build：包括项目的源码目录配置、输出目录配置、插件配置、插件管理配置等。
+* reporting：包括项目的报告输出目录配置、报告插件配置等。
+
+##### 依赖管理和插件管理
+Maven提供的dependencyManagement元素既能让子元素继承到父模块的依赖配置，又能保证子模块依赖使用的灵活性。在dependencymanagement元素下的依赖声明不会引入实际的依赖，不过它能够约束dependencies下的依赖使用。Maven也提供了pluginManagement元素帮助管理插件。在该元素中配置的依赖不会造成实际的插件调用行为，当POM中配置了真正的plugin元素，并且其groupId和artifactId与pluginManagement中配置的插件匹配时，pluginManagement的配置才会影响实际的插件行为。以下列举一个父模块的POM文件让其他子模块来继承：
+```
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.juvenxu.mvnbook.account</groupId>
+	<artifactId>account-parent</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>Account Parent</name>
+	<properties>
+		<springframework.version>2.5.6</springframework.version>
+		<junit.version>4.7</junit.version>
+	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-core</artifactId>
+				<version>${springframework.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-beans</artifactId>
+				<version>${springframework.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-context</artifactId>
+				<version>${springframework.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-context-support</artifactId>
+				<version>${springframework.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+				<scope>test</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.5</source>
+						<target>1.5</target>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<configuration>
+						<encoding>UTF-8</encoding>
+					</configuration>
+				</plugin>
+				<plugin>
+				    <groupId>org.apache.maven.plugins</groupId>
+				    <artifactId>maven-source-plugin</artifactId>
+				    <version>2.1.1</version>
+				    <executions>
+				        <execution>
+				            <id>attach-sources</id>
+				            <phase>verify</phase>
+				            <goals>
+                                <goal>jar-no-fork</goal>
+				            </goals>
+				        </execution>
+				    </executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+</project>
+```
+这里的dependencyManagement和pluginManagement声明的依赖既不会给account-parent引入依赖和插件配置，也不会给它的子模块引入这些声明，但是这段配置会被继承，当子模块声明了在父POM文件里声明的构件和插件，这时就可以避免一些重复的配置，这样可以在父POM中使用dependencyManagement和pluginManagement的配置可以统一继承项目的依赖版本和插件版本的参数。如果子模块不声明相关的配置那么也不会产生任何实际效果。同时，子模块还可以自定义一些在父POM中已经声明了的构件，可以覆盖在父POM中定义的配置。以下是一个子模块POM的例子：
+```
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>com.juvenxu.mvnbook.account</groupId>
+		<artifactId>account-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../account-parent/pom.xml</relativePath>
+	</parent>
+	
+	<artifactId>account-persist</artifactId>
+	<name>Account Persist</name>
+
+  <properties>
+  	<dom4j.version>1.6.1</dom4j.version>
+  </properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>dom4j</groupId>
+			<artifactId>dom4j</artifactId>
+			<version>${dom4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+	    <plugins>
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-source-plugin</artifactId>
+	        </plugin>
+	    </plugins>
+		<testResources>
+			<testResource>
+				<directory>src/test/resources</directory>
+				<filtering>true</filtering>
+			</testResource>
+		</testResources>
+	</build>
+</project>
+```
+在上例子模块中不声明依赖的使用，即使该依赖已经在父POM的dependencyManagement中声明了，也不会产生任何实际的效果。从上例中看出这种管理机制不能减少太多的POM配置，但是还是推荐使用这种方法。其主要原因在于父POM中使用dependencyManagement声明依赖能够统一项目范围中依赖的版本，当依赖版本在父POM中声明之后，子模块在使用依赖的时候就无须声明版本，也就不会发生多个子模块使用依赖版本不一致的情况。对于插件的继承当子模块中声明插件的groupId和artifactId与pluginManagement中配置的插件匹配时，pluginManagement的配置才会影响实际的插件行为。如果子模块不需要使用父模块中pluginManagement配置的插件，可以尽管将其忽略。如果子模块需要不同的插件配置，则可以自行配置以覆盖父模块的pluginManagement配置。当项目中的多个模块有同样的插件配置时，应当将配置移到父POM的pluginManagement元素中。即使各个模块对于同一插件的具体配置不尽相同，也应该使用父POM的pluginManagement元素统一声明插件的版本。甚至可以要求将所有用到的插件的版本在父POM的pluginManagement元素中声明，子模块使用插件时不配置版本信息，这么做可以统一项目的插件版本，避免潜在的插件不一致或者不稳定问题，也更容易维护。
+
+##### 聚合和继承的关系
+
+1. 对于聚合模块来说，它知道有哪些被聚合的模块，但那些被聚合的模块不知道这个聚合模块的存在。
+2. 对于继承关系的父POM来说，它不知道有哪些子模块继承于它，但那些子模块都必须知道自己的父POM是什么。
+3. 如果非要说这两个特性的共同点，那么可以看到，聚合POM与继承关系中的父POM的packing都必须是pom，同时，聚合模块与继承关系中的父模块除了POM之外都没有实际的内容。
+
+##### 反应堆
+在一个多模块的Maven项目中，反应堆(Reactor)是指所有模块组成一个构建结构。对于单模块的项目，反应堆就是该模块，但对于多模块的项目来说，反应堆就包含了各模块之间继承与依赖的关系，从而能够自动计算出合理的模块构建顺序。实际的构建顺序是这样形成的：Maven按序读取POM，如果该POM没有依赖模块，那么就构建该模块，否则就先构建其依赖模块，如果该依赖还依赖与其他模块，则进一步先构建依赖的依赖。
