@@ -494,3 +494,18 @@ Maven提供的dependencyManagement元素既能让子元素继承到父模块的�
 
 ##### 反应堆
 在一个多模块的Maven项目中，反应堆(Reactor)是指所有模块组成一个构建结构。对于单模块的项目，反应堆就是该模块，但对于多模块的项目来说，反应堆就包含了各模块之间继承与依赖的关系，从而能够自动计算出合理的模块构建顺序。实际的构建顺序是这样形成的：Maven按序读取POM，如果该POM没有依赖模块，那么就构建该模块，否则就先构建其依赖模块，如果该依赖还依赖与其他模块，则进一步先构建依赖的依赖。
+
+### 使用Maven进行测试
+Maven本身并不是一个单元测试框架，Java世界中主流的单元测试框架为JUnit(http://www.junit.org/)和TestNG(http://testng.org)。Maven所做的只是在构建执行到特定生命周期阶段的时候，通过插件来执行JUnit或者TestNG的测试用例。这一插件就是maven-surefire-plugin，可以称之为测试运行器(Test Runner)，它能很好地兼容JUnit3、JUnit4以及TestNG。  
+我们知道，生命周期阶段需要绑定到某个插件的目标才能完成真正的工作，test阶段正是与maven-surefire-plugin的test目标相绑定了，这是一个内置的绑定。在默认情况下，maven-surefire-plugin的test目标会自动执行测试源码路径(默认为src/test/java/)下所有符合一组命名模式的测试类。这组模式为:
+* \*\*/Test\*.java：任何子目录下所有命名以Test开头的Java类。
+* \*\*/\*Test.java：任何子目录下所有命名以Test结尾的Java类。
+* \*\*/\*TestCase.java：任何子目录下所有命名以TestCase结尾的Java类。
+只要将测试类按上述模式命名，Maven就能自动运行它们，用户也就不再需要定义测试集合(TestSuite)来聚合测试用例(TestCase)。要注意的是以Tests结尾的测试类是不会自动执行的。  
+
+##### 跳过测试
+* Maven跳过测试运行：`mvn package -DskipTests`
+* Maven跳过测试运行和测试代码的编译：`mvn package -Dmaven.test.skip=true`
+* 指定执行要运行的测试用例：`mvn test -Dtes=RandomGeneratorTest` 这里test参数的值是测试用例的类名，这行命令的效果就是只有RandomGeneratorTest这一个测试类得到执行。
+* 在指定测试用例的时候可以使用通配符`*`和`,`,星号可以匹配零个或多个字符，使用逗号指定多个测试用例。`mvn test -Dtest=Random*Test,AccountCaptchaServiceTest`,test参数的值必须匹配一个或者多个测试类，如果maven-surefire-plugin找不到任何匹配的测试类，就会报错并导致构件失败，可以加上-DfailNoIfTests=false，告诉maven-surefire-plugin即使没有任何测试也不要报错:`mvn test -Dtest -DfailIfNoTests=false`
+
