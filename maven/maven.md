@@ -509,3 +509,167 @@ Maven本身并不是一个单元测试框架，Java世界中主流的单元测�
 * 指定执行要运行的测试用例：`mvn test -Dtes=RandomGeneratorTest` 这里test参数的值是测试用例的类名，这行命令的效果就是只有RandomGeneratorTest这一个测试类得到执行。
 * 在指定测试用例的时候可以使用通配符`*`和`,`,星号可以匹配零个或多个字符，使用逗号指定多个测试用例。`mvn test -Dtest=Random*Test,AccountCaptchaServiceTest`,test参数的值必须匹配一个或者多个测试类，如果maven-surefire-plugin找不到任何匹配的测试类，就会报错并导致构件失败，可以加上-DfailNoIfTests=false，告诉maven-surefire-plugin即使没有任何测试也不要报错:`mvn test -Dtest -DfailIfNoTests=false`
 
+### 灵活的构建
+一个优秀的构建系统必须足够灵活，它应该能够让项目在不同的环境下都能成功地构建。Maven为了支持构建的灵活性，内置了三大特性，即属性、Profile和资源过滤。
+
+###### Maven属性
+1. 内置属性：主要有两个常用的内置属性————${basedir}表示项目根目录，即包含pom.xml文件的目录；${version}表示项目版本。
+2. POM属性：用户可以使用该类属性引用POM文件中对应元素的值。
+* ${project.build.sourceDirectory}：项目的主源码目录，默认为src/main/java。
+* ${project.build.testSourceDirectory}：项目的测试源码目录，默认为src/test/java。
+* ${project.build.directory}：项目构建输出目录，默认为target/。
+* ${project.outputDirectory}：项目主代码编译输出目录，默认为target/classes/。
+* ${project.testOutputDirectory}：项目测试代码编译输出目录，默认为target/test-classes/。
+* ${project.groupId}：项目的groupId。
+* ${project.artifactId}：项目的artifactId。
+* ${project.version}：项目的version，与${version}等价。
+* ${project.build.finalName}：项目打包输出文件的名称，默认为${project.artifactId}-${project.version}。
+3. 自定义属性：用户可以在POM的<properties>元素下自定义Maven属性。
+4. Settings属性：与POM属性同理，用户使用以settings.开头的属性引用settings.xml文件中XML元素的值，如常用的${settings.localRepository}指向用户本地仓库的地址。
+5. Java系统属性：所有Java系统属性都可以使用Maven属性引用。例如${user.home}指向了用户目录。用户可以使用`mvn help:system`查看所有的Java系统属性。
+6. 环境变量属性：所有环境变量都可以使用以env.开头的Maven属性引用。例如${env.JAVA_HOME}指代了JAVA_HOME环境变量的值。用户可以使用`mvn help:system`查看所有的环境变量。
+
+##### 资源过滤
+为了应对环境的变化，首先需要使用Maven属性将这些将会发生变化的部分提取出来。比如对数据库参数的定义，连接数据库使用的驱动类、URL、用户名和密码都可能发生变化，因此用Maven属性取代它们：
+```
+database.jdbc.driverClass=${db.driver}
+database.jdbc.connectionURL=${db.url}
+database.jdbc.username=${db.username}
+database.jdbc.password=${db.password}
+```
+同时需要在POM中定义这些属性的值，这里可以使用Maven Profile来定义它们：
+```
+<profiles>
+    <profile>
+        <id>dev</id>
+        <properties>
+            <db.driver>com.mysql.jdbc.Driver</db.driver>
+            <db.url>jdbc:mysql://192.168.1.100:3306/test</db.url>
+            <db.username>dev</db.username>
+            <db.password>dev-pwd</db.password>
+        </properties>
+    </profile>
+</profiles>
+```
+在Maven属性定义与直接在POM的properties元素下定义并无二致，这里只是使用了一个id为dev的profile，其目的是将开发环境下的配置与其他环境区别开来。有了属性的定义，配置文件中也使用了这些属性，还不行。Maven属性默认只能在POM中才会被解析。如果放在src/main/resources/目录下的文件中是不会解析的。资源文件的处理其实是maven-resources-plugin做的事情，它默认的行为只是将项目主资源文件复制到主代码编译输出目录中，将测试资源文件复制到测试代码编译输出目录中。不过只要通过一些简单的POM配置，该插件就能够解析资源文件中的Maven属性，即开启资源过滤。Maven默认的主资源目录和测试目录的定义是在超级POM中。要为资源目录开启过滤，只要在此基础上添加一行filtering配置即可。
+```
+<resources>
+    <resource>
+        <directory>${project.basedir}/src/main/resources</directory>
+        <filtering>true</filtering>
+    </resource>
+</resources>
+```
+
+##### Maven Profile
+要想使得构建不做任何修改就能在任何环境下运行，往往是不可能的。为了能让构建在各个环境下方便地移植，Maven引入了profile的概念。profile能够在构建的时候修改POM的一个子集，或者添加额外的配置元素。用户可以使用很多方式激活profile，以实现构建在不同的环境下的移植。
+
+激活Maven Profile的方式
+* 用户可以使用mvn命令行参数-P加上profile的id来激活profile，多个id之间以逗号分隔。 `mvn clean install -Pdev-x,dev-y`
+* 如果用户希望某个profile默认一直处于激活状态，就可以配置settings.xml文件的activeProfiles，表示其配置的profile对于所有项目都处于激活状态。
+```
+<settings>
+    <activeProfiles>
+        <activeProfile>dev-x</activeProfile>
+    </activeProfiles>
+</settings>
+```
+* Maven属性激活，用户可以配置某系统属性存在的时候，自动激活profile。
+```
+<profiles>
+    <profile>
+        <activation>
+            <property>
+                <name>test</name>
+            <property>
+        </activation>
+    </profile>
+</profiles>
+```
+可以进一步配置当某系统属性test存在，且值等于x的时候激活profile。
+```
+<profiles>
+    <profile>
+        <activation>
+            <property>
+                <name>test</name>
+                <value>x</value>
+            <property>
+        </activation>
+    </profile>
+</profiles>
+```
+不要忘了用户可以在命令行声明系统属性`mvn clean install -Dtest=x`。
+* 操作系统环境激活，Profile还可以自动根据操作系统环境激活，如果构建在不同的操作系统有差异，用户完全可以将这些差异写进profile，然后配置它们自动基于操作系统环境激活。
+```
+<profiles>
+    <profile>
+        <activation>
+            <os>
+                <name>Windows XP</name>
+                <family>Windows</family>
+                <arch>x86</arch>
+                <version>5.1.2600</version>
+            </os>
+        </activation>
+    </profile>
+</profiles>
+```
+这里family的值包括Windows、UNIX和Mac等，而其他几项name、arch、version，用户可以通过查看系统环境中的系统属性os.name、os.arch、os.version获得。
+* 文件存在与否激活，Maven能够根据项目中某个文件存在与否来决定是否激活profile。
+```
+<profiles>
+    <profile>
+        <activation>
+            <missing>x.properties</missing>
+            <exists>y.properties</exists>
+        </activation>
+    </profile>
+</profiles>
+```
+* 默认激活，用户可以在定义profile的时候指定默认激活,使用activeByDefault元素用户可以指定profile自动激活。
+```
+<profiles>
+    <profile>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+    </profile>
+</profiles>
+```
+要注意的是如果POM中有任何一个profile通过以上任意一种方式激活，所有的默认激活配置都会失效。  
+
+##### profile的种类
+1. pom.xml：很明显，pom.xml中声明的profile只对当前项目有效。
+2. 用户settingx.xml：用户目录下.m2/settings.xml中的profile对本机上该用户的所有Maven项目有效。
+3. 全局settings.xml：Maven安装目录下conf/settings.xml中的profile对本机上所有Maven项目有效。  
+
+不同类型的profile中可以声明的POM元素也是不同的，pom.xml中的profile能够随着pom.xml一起被提交到代码仓库中，被Maven安装到本地仓库中、被部署到远程Maven仓库中。可以保证该profile伴随着某个特定的pom.xml一起存在，因此它可以修改或者增加很多POM元素：
+```
+<project>
+    <repositories></repositories>
+    <pluginRepositories></pluginRepositories>
+    <distributionManagement></distributionManagement>
+    <dependencies></dependencies>
+    <dependencyManagement></dependencyManagement>
+    <modules></modules>
+    <properties></properties>
+    <reporting></reporting>
+    <build>
+        <plugins></plugins>
+        <defaultGoal></defaultGoal>
+        <resources></resources>
+        <testResources></testResources>
+        <finalName></finalName>
+    </build>
+</project>
+```
+Maven不允许用户在settings.xml的profile中声明依赖或者插件。事实上，在pom.xml外部的profile只能够声明如下的几个元素:
+```
+<project>
+    <repositories></repositories>
+    <pluginRepositories></pluginRepositories>
+    <properties></properties>
+</project>
+```
+现在不用担心POM外部的profile会对项目产生太大的影响了，事实上这样的profile仅仅能用来影响到项目的仓库和Maven属性。
