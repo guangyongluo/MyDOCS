@@ -496,7 +496,7 @@ Maven提供的dependencyManagement元素既能让子元素继承到父模块的�
 在一个多模块的Maven项目中，反应堆(Reactor)是指所有模块组成一个构建结构。对于单模块的项目，反应堆就是该模块，但对于多模块的项目来说，反应堆就包含了各模块之间继承与依赖的关系，从而能够自动计算出合理的模块构建顺序。实际的构建顺序是这样形成的：Maven按序读取POM，如果该POM没有依赖模块，那么就构建该模块，否则就先构建其依赖模块，如果该依赖还依赖与其他模块，则进一步先构建依赖的依赖。
 
 ### 使用Maven进行测试
-Maven本身并不是一个单元测试框架，Java世界中主流的单元测试框架为JUnit(http://www.junit.org/)和TestNG(http://testng.org)。Maven所做的只是在构建执行到特定生命周期阶段的时候，通过插件来执行JUnit或者TestNG的测试用例。这一插件就是maven-surefire-plugin，可以称之为测试运行器(Test Runner)，它能很好地兼容JUnit3、JUnit4以及TestNG。  
+Maven本身并不是一个单元测试框架，Java世界中主流的单元测试框架为JUnit[\(http://www.junit.org/\)](http://www.junit.org/)和TestNG[\(http://testng.org\)](http://testng.org)。Maven所做的只是在构建执行到特定生命周期阶段的时候，通过插件来执行JUnit或者TestNG的测试用例。这一插件就是maven-surefire-plugin，可以称之为测试运行器(Test Runner)，它能很好地兼容JUnit3、JUnit4以及TestNG。  
 我们知道，生命周期阶段需要绑定到某个插件的目标才能完成真正的工作，test阶段正是与maven-surefire-plugin的test目标相绑定了，这是一个内置的绑定。在默认情况下，maven-surefire-plugin的test目标会自动执行测试源码路径(默认为src/test/java/)下所有符合一组命名模式的测试类。这组模式为:
 * \*\*/Test\*.java：任何子目录下所有命名以Test开头的Java类。
 * \*\*/\*Test.java：任何子目录下所有命名以Test结尾的Java类。
