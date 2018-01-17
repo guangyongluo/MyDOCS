@@ -89,3 +89,70 @@ XML处理器总是将文档中不是标记的所有字符都传递给应用程�
 
 ##### 语言标识
 在文档处理中还可以使用一个特殊的元素属性xml:lang来指出XML文档中任何元素的内容和属性的值所使用的语言。
+
+### XML名称空间
+XML名称空间的概念是通过给元素或属性加上一个名称空间，来唯一标识一个元素或属性。名称空间通过使用一系列的保留属性来声明，这种属性的名字必须是以xmlns或以xmlns:作为前缀。与其他任何XML属性一样，这些属性可以直接或以默认的方式给出。有以下两种形式的名称空间声明：
+1. 第一种形式：<元素名 xmlns:prefixname="URI">
+元素名是指在哪一个元素上声明名称空间，在这个元素上声明的名称空间适用于声明它的元素和属性，以及该元素内容中的所有元素及其属性。xmlns:prefixname作为该元素的属性名，属性的值是一个URI引用，是标识该名称空间的名称空间名字。其中prefixname给出名称空间前缀的名字，该前缀用于将元素及属性的名字与URI关联在一起。需要注意的是，在这样的声明中，名称空间的名字不能为空("")。来自于XML名称空间的名字可以作为限定名(qualified names)出现，限定名包含了一个以冒号(:)分隔的名称空间前缀和一个本地部分(local part)。映射到URI引用的名称空间前缀选择了一个名称空间。名称空间前缀可以是不包含冒号的任何合法的XML名称，在声明名称空间时，有两个前缀是不允许使用的——xml和xmlns。
+2. 第二种形式：<元素名 xmlns="URI">
+这种声明形式没有给出名称空间的前缀名，URI所标识的是默认的名称空间。在这样的默认声明中，属性值可以为空("")。  
+**在声明名称空间时，选择的URI不需要指向实际的内容，在URI所标识的位置上，可以不存在任何东西。在名称空间声明中的URI，只是形式上的标识符，其唯一的目的是提供一个唯一的名字**
+
+
+##### 默认名称空间
+我们可以使用没有前缀名的xmlns属性将默认的名称空间附加给元素及其子元素，元素本身及其子元素都被认为是在默认的名字空间中，除非它们有明确的前缀。默认名称空间声明中的URI可以设为空字符串，这样的话，在它的声明范围内，没有前缀的元素将被认为不存在于任何的名称空间中，这和没有声明默认名称空间时一样的。
+
+##### 属性的名称空间
+一个属性想要在某个名称空间中，必须给该属性加上名称空间的前缀，没有前缀的属性不在任何的名称空间中(包括默认的名称空间)。即使拥有属性的元素在某个名称空间中，没有前缀的属性仍然不在该名称空间或任何其他的名称空间中。
+
+### XML Schema
+基本概念：XML Schema是基于XML的 DTD替代者。XML Schema主要用来描述 XML文档的结构。XML Schema语言也称作 XML Schema定义(XML Schema Definition，XSD)。为什么说XML Schema是DTD的继任者有以下几点理由：
+* XML Schema 可针对未来的需求进行扩展
+* XML Schema 更完善，功能更强大
+* XML Schema 基于 XML 编写
+* XML Schema 支持数据类型
+* XML Schema 支持命名空间
+ 
+
+##### 什么是XML Schema
+* 定义可出现在文档中的元素
+* 定义可出现在文档中的属性
+* 定义哪个元素是子元素
+* 定义子元素的次序
+* 定义子元素的数目
+* 定义元素是否为空，或者是否可包含文本
+* 定义元素和属性的数据类型
+* 定义元素和属性的默认值以及固定值
+
+##### 定义XML Schema
+在一个XML Schema定义文档中，<schema>元素是每个XML Schema的根元素，而且<schema>元素可包含属性，一个schema声明往往看上去如以下定义范例：
+```
+<?xml version="1.0"?>
+ 
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+targetNamespace="http://www.w3school.com.cn"
+xmlns="http://www.w3school.com.cn"
+elementFormDefault="qualified">
+ 
+ ...
+ ...
+</xs:schema>
+```
+首先定义了一个名称空间“http://www.w3.org/2001/XMLSchema”，并且使用该名称空间的前缀xs:来限定schema本身，表示schema中用到的元素和数据类型来自名称空间“http://www.w3.org/2001/XMLSchema”。使用targetNamespace属性来表示当前schema定义的元素来自名称空间“http://www.w3school.com.cn”。使用xmlns来定义默认的名称空间为“http://www.w3school.com.cn”。最后使用elementFormDefault表示在任何XML实例文档所使用的且在此schema中声明过的元素必须被名称空间限制。
+
+##### 引用XML Schema
+如下是一个XML文档引用XML Schema的例子：
+```
+<?xml version="1.0"?>
+
+<note xmlns="http://www.w3school.com.cn"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.w3school.com.cn note.xsd">
+
+    <to>George</to>
+    <from>John</from>
+    <heading>Reminder</heading>
+    <body>Don't forget the meeting!</body>
+</note>
+```
+xmlns定义了默认的名称空间为“http://www.w3school.com.cn”，并定义了一个前缀为xsi的名称空间“http://www.w3.org/2001/XMLSchema-instance”，使用xsi名称空间下的schemaLocation元素来指定使用xsd文件验证某个名称空间本例是使用相同路径下的note.xsd文件来验证“http://www.w3school.com.cn”名称空间。
