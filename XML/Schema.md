@@ -101,6 +101,19 @@ Schema的数据类型——数据类型的特征
 |Pattern|指定数据的显示规范|
 
 Schema的元素类型
-* schema：schema文档的根元素，包含已经定义的所有schema元素，用法`<xs:schema>`,；
-* 
+* schema：schema文档的根元素，包含已经定义的所有schema元素，其主要的属性有xmlns,targetNamespace;
+* element：声明一个元素，其主要属性有name,type,ref,minOccurs,maxOccurs,substitutionGroup,fixed,default;
+* group：把一组元素声明组合在一起，以便它们能够一起被复合类型使用，主要属性有name/ref；
+* attribute：声明一个属性，主要属性有name/type/ref/use，use属性值为required/optional/prohibited;
+* attributeGroup：把一组属性声明组合在一起，以便可以被复合类型使用，主要属性有name/ref；
+* simpleType：定义一个简单类型，它决定了元素和属性值的约束和相关信息,属性为name,主要有三个子元素restriction、list、union。restriction定义了一个包含约束条件的简单类型，list定义一个多个简单类型的列表类型，union从一个特定简单数据类型的集合中选择定义一个简单类型。
+* complexType：定义一个符合类型，它决定了一组元素和属性值的约束和相关信息，属性为name；
+* simpleType类型的元素中不能包含元素或者属性，当需要声明一个元素的子元素或者属性时，用complexType；当需要基于内置的基本数据类型定义一个新的数据类型时，用simpleType；
+* simpleContent：应用于contentType，对它的内容进行约束和扩展；
+* choice：允许唯一的一个元素从一个组中被选择，属性为minOccurs/maxOccurs；
+* sequence：给一组元素一个特定的序列；
+
+##### 总结
+Schema是另一种文档类型定义，它遵循XML的语言规范。它是可扩展的文档定义语言，支持XML名称空间，支持更多的数据类型与元素类型。
+
 
