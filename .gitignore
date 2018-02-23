@@ -3,3 +3,6 @@
 
 #Hbuilder生成的临时文件.*.html
 .*.html
+
+#books目录中的技术书籍
+books/
