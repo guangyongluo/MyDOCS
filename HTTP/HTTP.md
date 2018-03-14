@@ -45,33 +45,33 @@
 
 ###### 请求头
 请求头字段用于客户端在请求消息中向服务器发送传递附加信息，主要包括客户端可以接受的数据类型、压缩方法、语言、以及发出请求的超链接所属网页的URL地址等信息。
-Accept：自出浏览器能够支持的数据格式；
-Accept-Charset：用于指出浏览器能够处理的字符集；
-Accept-Encoding：用于指定浏览器能够进行解码的方式；
-Accept-Language：用于指定浏览器的国家语言信息；
-Authorization：用于响应服务器要求的认证机制；
-Expect：100-continue 用于指定浏览器请求服务器采取特殊的处理；
-From：用于指定发送者的E-mail地址；
-Host：用于指定浏览器访问的资源所在的主机名和端口号。
-If-Match：用于指定浏览器访问资源的ETag，只有服务器上的资源ETag值与请求头中的ETag相同才处理该请求；
-If-Modified-Since：用于指定上次所缓存网页文档的修改时间；
-If-Range：用于服务器返回上次所缓存网页文档的修改时间；
-Range：用于指定服务器只放回部分内容。
-Referer：用于指定访问请求是从哪里发送的。
-User-Agent：用于指定客户端浏览器的程序类型。
+1. Accept：自出浏览器能够支持的数据格式；
+2. Accept-Charset：用于指出浏览器能够处理的字符集；
+3. Accept-Encoding：用于指定浏览器能够进行解码的方式；
+4. Accept-Language：用于指定浏览器的国家语言信息；
+5. Authorization：用于响应服务器要求的认证机制；
+6. Expect：100-continue 用于指定浏览器请求服务器采取特殊的处理；
+7. From：用于指定发送者的E-mail地址；
+8. Host：用于指定浏览器访问的资源所在的主机名和端口号。
+9. If-Match：用于指定浏览器访问资源的ETag，只有服务器上的资源ETag值与请求头中的ETag相同才处理该请求；
+10. If-Modified-Since：用于指定上次所缓存网页文档的修改时间；
+11. If-Range：用于服务器返回上次所缓存网页文档的修改时间；
+12. Range：用于指定服务器只放回部分内容。
+13. Referer：用于指定访问请求是从哪里发送的。
+14. User-Agent：用于指定客户端浏览器的程序类型。
 
 ###### 实体头
 实体头用作实体内容的元信息，描述了实体内容的属性，包括实体信息的类型、长度、压缩方式、最后一次修改时间、数据有效性。
-Allow：指定接受的访问方式；
-Content-Encoding：指定返回实体内容的压缩方式；
-Content-Language：指定返回实体内容的语言信息；
-Content-Length：指定返回实体内容的大小；
-Content-Location：指定消息中实体的实际位子；
-Content-MD5：提供实际内容的MD5摘要值校验；
-Content-Range：用于指定返回的部分实体的位子信息；
-Content-Type：用于指定实体内容的数据格式和字符集信息；
-Expires：用于指定当前返回的实体缓存在什么时候过期；
-Last-Modified：用于指定文档的最后更新时间。
+1. Allow：指定接受的访问方式；
+2. Content-Encoding：指定返回实体内容的压缩方式；
+3. Content-Language：指定返回实体内容的语言信息；
+4. Content-Length：指定返回实体内容的大小；
+5. Content-Location：指定消息中实体的实际位子；
+6. Content-MD5：提供实际内容的MD5摘要值校验；
+7. Content-Range：用于指定返回的部分实体的位子信息；
+8. Content-Type：用于指定实体内容的数据格式和字符集信息；
+9. Expires：用于指定当前返回的实体缓存在什么时候过期；
+10. Last-Modified：用于指定文档的最后更新时间。
 
 ###### 扩展头
 * 在HTTP消息中我们也可以使用没有在HTTP/1.1正式规范中没有定义过的头字段，这些头字段统称为自定义HTTP头或扩张头，它们通常被当做一种实体头来处理
