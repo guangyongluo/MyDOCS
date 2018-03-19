@@ -25,4 +25,30 @@ Tomcat的体系结构可以参看*Tomcat体系图* ![图2-1][Tomcat_architect]
 
 * 对于对个IP地址的映射需要在客户端或者DNS服务器中配置IP地址和主机名的映射关系后，就可以在Host元素中设置IP的访问方式了。
 
+###### 4.Web应用程序目录结构
+一个Web应用程序是由一组Servlet、HTML页面、类，以及其他的资源组成的运行在Web服务器上的完整的应用程序，以一种结构化的由层次的目录形式存在。组成Web应用程序的这些资源文件要部署在相应的目录层次中，根目录代表了整个Web应用程序的根。表4-1 Web应用程序的目录层次结构
+
+|目录|描述|
+|:--------:|:--------:|
+|\myweb|Web应用程序的根目录，属于此Web应用程序的所有文件都存放在这个目录下|
+|\myweb\WEB-INF|存放Web应用程序的部署描述符文件web.xml|
+|\myweb\WEB-INF\classes|存放Servlet和其他有用的类文件|
+|\myweb\WEB-INF\lib|存放Web应用程序需要用到的JAR文件，这些JAR文件中可以包含Servlet、Bean和其他有用的类文件|
+|\myweb\WEV-INF\web.xml|web.xml文件包含Web应用程序的配置和部署信息|
+
+从表中可以看出，WEB-INF目录下的classes和lib目录都可以存放Java的类文件，在Servlet容器运行时，Web应用程序的类加载器将首先加载classes目录下的类文件。如果这两个目录下存在同名的类，起作用的将是classes目录下的类文件。
+WEB-INF是个特殊的目录，其名称必须全部大写，而且这个目录不属于Web应用程序可以访问的上下文路径的一部分，对客户端来说，这个目录是不可见的。但是对servlet代码来说是可见的。
+Web应用程序的配置和部署都是通过web.xml文件来完成的。web.xml被称为Web应用程序的部署描述符，它可以包含如下的配置和部署信息:
+* ServletContext的初始化参数
+* Session的配置
+* Servlet/JSP的定义
+* Servlet/JSP的映射
+* MIME类型映射
+* 欢迎文件列表
+* 错误页面
+* 安全
+* 地区和编码映射
+* JSP配置
+
+
 [Tomcat_architect]: ../image/Tomcat_architect.png "图2-1"
