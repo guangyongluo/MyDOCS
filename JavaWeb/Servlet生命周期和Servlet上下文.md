@@ -7,3 +7,14 @@
 
 ###### Servlet上下文
 运行在Java虚拟机中的每一个Web应用程序都有一个与之相关的Servlet上下文。Java Servlet API提供一个ServletContext接口来表示上下文。在这个接口中定义了一组方法，Servlet可以使用这些方法与它的Servlet容器进行通信。一个ServletContext对象表示一个Web应用程序的上下文。Servlet容器在Servlet初始化期间，向其传递servletConfig对象，可以通过ServletConfig对象的getServletContext()方法来得到ServletContext对象。也可以通过GenericServlet对象的getServletContext()方法来得到ServletContext对象，其实GenericServlet类的getServletContext()也是调用ServletConfig对象的getServletContext()方法来得到这个对象的。
+
+###### 请求转发
+1. RequestDispatcher接口
+RequestDispatcher对象由Servlet容器创建，用于封装一个由路劲所标识的服务器资源。利用RequestDispatcher对象，可以把请求转发给其他的Servlet或JSP页面。
+在RequestDispatcher接口中定义了两种方法：
+* forward：该方法用于将请求从一个Servlet传递给服务器上的另外的Servlet、JSP页面或者是HTML文件。在Servlet中，可以对请求做一个初步的处理，然后调用这个方法，将请求传递给其他的资源类生成响应。要注意的是，这个方法必须在响应被提交给客户端之前调用，否则的话，它将抛出IllegalStateException异常。**在forward()方法调用之后，原先在响应缓存中的没有提交的内容将被自动清除**。
+* include：该方法用于在响应中包含其他资源(Servlet、JSP页面或HTML文件)的内容。和forward()方法的区别在于：利用include()方法将请求转发给其他的Servlet，被调用的Servlet对该请求做出响应将并入原先的响应对象中，原先的Servlet还可以继续输出响应信息。而利用forward()方法将请求转发给其他的Servlet，将由被调用的Servlet负责对请求做出响应，而原先Servlet的执行则终止。
+
+2. 三种方法可以用来得到RequestDispatcher对象。
+* 利用ServletRequest接口中的getRequestDispatcher()方法；
+* servletContext接口中的getNamedDispatcher()和getRequestDispatcher()方法；
