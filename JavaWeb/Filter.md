@@ -43,6 +43,11 @@ Filter的部署描述与Servlet相似，`<filter-name>`元素用于为过滤器�
 servlet。用户在访问`<url-pattern>`元素指定的URL上的资源或`<servlet-name>`元素指定的servlet时，该过滤器才会被容器调用。
 `<filter-mapping>`元素还可以包含0到4个`<dispatcher>`，`<dispatcher>`元素指定过滤器的请求方法，可以是REQUEST，INCLUDE，FORWARD
 和ERROR四种之一。
+* REQUEST：当用户直接访问页面时，Web容器将会调用过滤器。如果目标资源是通过RequestDispatcher的include()或forward()方法访问时
+，那么该过滤器将不会调用。
+* INCLUDE：如果目标资源是通过RequestDispatcher的include()方法访问时，那么该过滤器将被调用。除此之外，过滤器不会被调用。
+* FORWARD：如果目标资源是通过RequestDispatcher的forward()方法访问时，那么给过滤器将被调用。除此之外，过滤器不会被调用。
+* ERROR：如果目标资源是通过声明式异常处理机制调用时，那么该过滤器将被调用。除此之外，过滤器不会被调用。
 
 
 
