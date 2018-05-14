@@ -15,3 +15,36 @@ Lambda表达式是Java8中最重要的新功能之一。使用Lambda表达式可
 ###### Lambda表达式的使用场景
 任何有函数式接口的地方都可以使用Lambda表达式。其中函数式接口的定义：只有一个抽象方法(Object
 类中的方法除外)的接口是函数式接口。
+
+###### Lambda表达式是什么
+Lambda表达式是一个对象，是一个函数式接口的实例。
+
+###### Lambda表达式语法
+LambdaParameters -> LambdaBody例如函数式接口Runnable
+```Runnable r = () -> System.out.println("hello world!");```
+args -> expr : (Object... args) -> {函数式接口抽象方法实现逻辑}，()里面的参数个数，根据函数式
+接口里面抽象方法的参数个数来决定。当只有一个参数的时候，()可以省略；当expr逻辑非常简单的时候，
+{}和return可以省略。下面是一些简单的事例：
+```
+() -> {} //无参无返回值
+() -> {System.out.println(1);} //无参无返回值
+() -> System.out.println(1); //上面的简写
+() -> {return 100;} //无参，由返回值
+() -> return 100; //上面的简写
+() -> null //无参无返回值
+(int x) -> {return x+1;} //单个参数，有返回值
+(int x) -> x+1 //上面的简写
+(x) -> x+1 //单个参数，有返回值(不指定参数类型，多个参数必须用括号)
+x -> x+1 //单个参数，有返回值(不指定参数类型)
+```
+
+###### 方法的引用
+方法引用是用来直接访问类或者实例的已经存在的方法或者构造方法，方法引用提供了一种引用而不执行
+方法的方式，如果抽象方法的实现恰好可以调用另外一个方法来实现，就有可能使用方法来实现。
+
+|类型|语法|对应的lambda表达式|
+|:--------:|:----------------:|:----------------:|
+|静态方法引用|类名::staticMethod|(args) -> 类名.staticMethod(args)|
+|实例方法引用|inst::instMethod|(args) -> inst.instMethod(args)|
+|对象方法引用|类名::instMethod|(inst,args) -> 类名.instMethod(args)|
+|构造方法引用|类名::new|(args) -> new 类名(args)|
