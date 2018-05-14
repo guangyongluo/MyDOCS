@@ -1,4 +1,12 @@
 ### Log4j简介
+日志管理提供以下几点好处：首先，记录程序运行时的出错信息，便于开发人员分析错误原因，修正Bug；
+其次，充当集成开发环境中的调试器的作用，向文件或控制台打印代码的调试信息。最后，监控程序运行
+的情况，周期性的记录到文件中或数据库中，以便日后进行统计分析。也正是因为日志信息记录的普遍性，
+所以Apache组织推出了日志管理工具包——Log4j。Log4j是Apache的一个开源项目，通过使用Log4j，我们
+可以控制日志信息输送的目的地是控制台、文件、GUI组件，甚至是套接口服务器、NT的事件记录器、UNIX
+ Syslog守护进程等；我们也可以控制每一条日志的输出格式；通过定义每一条日志信息的级别，我们能够
+ 更加细致地控制日志的生成过程。最令人感兴趣的就是，这些可以通过一个配置文件来灵活地进行配置，
+ 而不需要修改应用的代码。要下载和了解更详细的内容，还是访问其官方网站吧:http://jakarta.apache.org/log4j.md
 
 ###### log4j主要由三种主要组件构成
 1. Logger组件：记录器负责产生日志，并能够对日志信息进行分类筛选，控制什么样的日志应该被输出，
@@ -36,3 +44,10 @@
 1. 得到日志记录器调用Logger类的静态方法getLogger(String name)来得到。
 2. 读取配置文件：目前，配置文件可以使用两种形式，一种是key=value的Java属性格式文件，一种是XML文件。
 3. 编写记录日志的语句。
+
+###### 设置log4j三种方法
+* BasicConfigurator.configure()：创建一个简单的Log4j设置。这个方法为根记录器添加一个ConsoleAppender的实例，输出的
+信息将使用PatternLayout来格式化，格式化语句为“%r [%t] %p %c %x - %m%n”。在默认情况下，根记录器的日志级别设置为
+level.DEBUG，也就是最低一级。
+* PropertyConfiguration.configure(String configFileName)：读取使用key=value方式编写的配置文件来设置Log4j运行环境。
+* DOMConfiguration.configure(String filename)：读取XML格式的配置文件来设置Log4j的运行环境。
