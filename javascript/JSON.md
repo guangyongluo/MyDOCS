@@ -40,7 +40,7 @@ var obj = [{"name":"chunlynn","sex":"man" },{"name":"linda","sex":"wowen"}];
 ###### JSON.parse()和JSON.stringify()
 
 | 方法名 | 描述 |
-|:========:|:========:|
+|:--------:|:---------|
 | parse(s, reviver) | 将字符串解析为JSON，S:要解析的字符串；reviver(可选)：用于装换解析值的可选函数；|
 | stringify(o, filter, intent) | 将指定的参数o转换为字符串，会调用o的toJSON方法，o:要转换为字符串的JSON对象，数组或原始值；filter：可选的函数在转换前做一些替换，或一个数组，包含要转换的属性名；intent：可选参数，指定参数，指定缩进及缩进的空格数，最大是10|
 

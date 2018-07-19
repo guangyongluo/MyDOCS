@@ -72,7 +72,7 @@ const compose = function (f, g) {
 ```
 函数的合成还必须满足结合律。
 
-![图1-2][compose_principle]
+![图1-3][compose_principle]
 ```
 compose(f, compose(g, h))
 // 等同于
@@ -109,13 +109,7 @@ addX(2)(1) // 3
 函子是函数式编程里面最重要的数据类型，也是基本的运算单位和功能单位。它首先是一种范畴，也就是说，是一个容器，包含了值和变形
 关系。比较特殊的是，它的变形关系可以依次作用于每一个值，将当前容器变形成另一个容器。如图1-4
 
-![图1-3][functor]
-
-
-[category_concept]: ../image/Category.jpg "图1-1"
-[function_compose]: ../image/function_compose.png "图1-2"
-[compose_principle]: ../image/compose_principle.png "图1-3"
-[functor]: ../image/functor.png "图1-4"
+![图1-4][functor]
 
 上图中，左侧的圆圈就是一个函子，表示人名的范畴。外部传入函数f，会转成右边表示早餐的范畴。
 
@@ -136,3 +130,19 @@ class Functor {
 上面代码中，Functor是一个函子，它的map方法接受函数f作为参数，然后返回一个新的函子，里面
 包含的值是被f处理过的（f(this.val)）。**一般约定，函子的标志就是容器具有map方法。该方
 法将容器里面的每一个值，映射到另一个容器。**
+
+
+
+
+
+
+
+
+
+
+
+
+[category_concept]: ../image/Category.jpg "图1-1"
+[function_compose]: ../image/function_compose.png "图1-2"
+[compose_principle]: ../image/compose_principle.png "图1-3"
+[Functor]: ../image/Functor.png "图1-4"
