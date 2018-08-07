@@ -80,8 +80,33 @@ instanceof运算符的右操作数是构造函数，但计算过程实际上是�
 如果你想检测对象的原型链上是否存在某个特定的原型对象，可以使用isPrototypeOf()方法。instanceof运算符和
 isPrototype()方法的缺陷是，我们无法通过对象来获得类名，只能检测对象是否属于指定的类名。
 
+另一种识别对象是否属于某个类的方法时使用constructor属性。因为构造函数是类的公共标识，所以最直接的方法
+就是使用constructor属性。同样JavaScript中也并非所有的对象都包含constructor属性。在每个新创建的函数原型
+上默认会有constructor属性，使用constructor属性检测对象属于某个类的技术的不足之处和instanceof一样。在多
+个执行上下文的场景中它是无法正常工作的。
 
+###### 标准转换方法
+* toString()：当对象被需要当成字符串使用时，JavaScript会自动调用这个方法返回一个表示这个对象的字符串，如果
+没有实现这个方法，类会默认从Object.prototype中继承toString()方法。
+* valueof()：当对象需要被当成数字使用时，会自动调用valueof()方法，将对象转换成原始值。
+* toJSON()：这个方法是由JSON.stringify()自动调用。JSON格式用于序列化对象，可以处理原始值、数组和纯对象。它
+和类无关，当对一个对象执行序列化操作时，它会忽略对象的原型和构造函数。
 
+###### 子类
+在面向对象编程中，类B可以继承自另一个类A。我们将A称为父类(superclass)，将B称为子类(subclass)。B的实例从A继
+承了所有的实例方法。类B可以定义自己的实例方法，有些方法可以重载类A中的同名方法，如果B的方法重载A中的方法，
+B中的重载方法可能会调用A中的重载方法，这种做法称为“方法链”(method chaining)。同样，子类的构造函数B()有时需
+要调用父类的构造函数A()，这种做法称为“构造函数链”(constructor chaining)。子类还可以有子类，当涉及类的层次
+结构时，往往需要定义抽象类(abstract class)。抽象类中定义的方法没有实现。抽象类中的抽象方法时在抽象类的具体子
+类中实现的。
 
+JavaScript的对象可以从类的原型对象中继承属性(通常继承的是方法)。如果O是类B的实例，B是A的子类，那么O也是一定
+从A中继承了属性。为此，首先要确保B的原型对象继承自A的原型对象。参看如下代码：
+```
+    B.prototype = inherit(A.prototype);
+    B.prototype.constructor = B;
+```
+这两行代码是在JavaScript中创建子类的关键。如果不这样做，原型对象仅仅是一个普通对象，它只继承自Object.prototype，
+这意味着你的类和所有的类一样是Object的子类。
 
 [JavaScript_constructor]: ../image/JavaScript_constructor.png "图1-1"
