@@ -57,10 +57,10 @@ p.important {color : red;} /* 匹配class属性包含important的所有p元素 *
 *#intro {font-weight : bold;} /* 匹配ID为intro的元素 */
 #intro {font-weight : bold;} /* 同类选择器一样可以省略*通配符 */
 ```
-ID选择器与类选择器的主要区别：1.在一个HTML文档中ID选择器会使用一次，而且仅一次；2.ID选择器不能
-结合使用，因为ID属性不允许有以空格分隔的词列表；3.可以定义在不同文档中的ID属性相同的选择器。
-**要注意的是，类选择器和ID选择器可能是区分大小写的。这取决于文档的语言。HTML和XHTML将类和ID定义为
-区分大小写，所以类和ID值的大小写必须与文档中的相应值匹配。**
+ID选择器与类选择器的主要区别：1.在一个HTML文档中ID选择器会使用一次，而且仅一次；2.ID选择器不
+能结合使用，因为ID属性不允许有以空格分隔的词列表；3.可以定义在不同文档中的ID属性相同的选择器。
+**要注意的是，类选择器和ID选择器可能是区分大小写的。这取决于文档的语言。HTML和XHTML将类
+和ID定义为区分大小写，所以类和ID值的大小写必须与文档中的相应值匹配。**
 
 6. 属性选择器
 如果希望选择有某个属性的元素，而不论属性值是什么，可以使用简单属性选择器。
@@ -80,4 +80,49 @@ a[href="http://www.w3school.com.cn/"][title="W3School"] {color: red;}
 如果需要根据属性值中的词列表的某个词进行选择，则需要使用波浪号(~)
 ```
 p[class~="important"] {color: red;} /* p元素中class属性只要包含important就可以匹配成功 */
+```
+根据部分属性值选择：
+
+|属性值选择器|描述|例子|
+|:--------:|:----------------:|:--------:|
+|[attribute=value]|元素属性值必须严格匹配选择器中的属性值|[title="Hello W0rld"] --> `<img src="/i/eg_tulip.jpg" title="Hello W0rld" />`|
+|[attribute~=value]|元素属性值中包含独立的单词为选择器指定的字符才能匹配。|[title~=flower]  -->  `<img src="/i/eg_tulip.jpg" title="tulip flower" />`|
+|[attribute*=value]|元素属性值中包含有选择器中定义的字符串就可以匹配|[title~=flower]   -->  `<img src="/i/eg_tulip.jpg" title="ffffflowerrrrrr" />`|
+|[attribute|=value]|元素属性值以选择器指定的字符为独立的单词开头才能匹配|[lang|=en]     -->  `<p lang="en">  <p lang="en-us">`|
+|[attribute^=value]|元素属性值以选择器指定的字符串开头就可以匹配|[lang^=en]    -->  `<p lang="ennn">`|
+|[attribute$=value]|元素属性值以选择器指定的字符串结尾就可以匹配|a[src$=".pdf"] --> `<a src="C:\Users\administrator\Documents\CSS.pdf" />`|
+
+7. 后代选择器
+后代选择器又称包含选择器，可以选择作为某个元素后代的子元素。在后代选择器中，规则左边的选择
+器包含两个或多个用空格分隔的选择器。选择器之间的空格是一种结合符(combinator)。每个空格结合
+符可以解释为“...在...找到”、“...作为...的后代”，但是要求必须从右向左读选择器。因此，`h1
+ em`选择器可以解释为“作为h1元素后代的任何em元素”。
+ `h1 em {color : red}`
+后代选择器的功能极其强大。有了它，可以使用HTML中不可能实现的任务成为可能。假设有一个文档，
+其中有一个边栏，还有一个主区。边栏的背景为蓝色，主区的背景为白色，这两个区都包含链接列表。
+不能把所有链接都设置为蓝色，因为这样一来边栏中的蓝色链接都无法看到。解决方案是使用后代选择
+器。在这种情况下，可以为包含边栏的div指定值为sidebar的class属性，并把主区的class属性值设置
+为maincontent。如下编写样式：
+```
+div.sidebar {background : blue;}
+div.maincontent {background : white;}
+div.sidebar a:link {color : white;}
+div.maincontent a:link {color : blue;}
+```
+**注意要点两个元素之间的层次间隔可以是无限的，也就是后代选择器可以匹配所有子孙节点**
+
+8. 子元素选择器
+如果不希望选择任意后代元素，而是缩小范围选在某个元素的子元素，请使用子元素选择器(child
+selector)。子元素选择器使用了大于号(子结合符)。子结合符两边可以有空白符，这是可选的。
+```
+h1 > strong {color : red;}
+```
+选择只作为h1元素子元素的strong元素。
+
+9. 兄弟选择器
+可选择紧接在另一个元素后的元素，且二者有相同父元素。相邻兄弟选择器使用了加号(+)，即相
+邻兄弟结合符(Adjacent sibling combinator)。与子结合符一样，相邻兄弟结合符旁边可以有空
+白符。
+```
+h1 + p {margin-top 50px;}
 ```
