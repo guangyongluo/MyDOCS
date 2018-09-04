@@ -5,23 +5,23 @@
 ###### 基本选择器
 基本选择器是jQuery最常见的选择器，也是最简单的选择器，它通过元素id、class和标签名来查找DOM元素(在网页中id只能使用一次，class允许重复
 使用)。所谓的网页中id只能使用一次的意思是说，一个网页中的id时不可以重复的，也就是具有唯一性。
-1. #id
-用法：$("myDiv");返回值是单个元素的组成集合。
+1. \#id  
+用法：$("myDiv");返回值是单个元素的组成集合。  
 说明：这个就是直接选择HTML中的id="myDiv"。
 
-2. element
-用法：$("div");返回值是集合元素。
+2. element  
+用法：$("div");返回值是集合元素。  
 说明：element就是HTML已定义的标签元素。
 
-3. class
-用法：$(".myclass");返回值是集合元素。
+3. class  
+用法：$(".myclass");返回值是集合元素。  
 说明：这个标签直接选择HTML中class="myclass"的元素或元素组。
 
-4. \*
-用法：$("*");返回值是集合元素。
+4. \*  
+用法：$("*");返回值是集合元素。  
 说明：匹配所有元素，多用于结合上下文来搜索。
 
-5. selector1, selector2...selectorN
+5. selector1, selector2...selectorN 
 用法：$("div,span,p.myclass");返回值是集合元素。
 说明：将每一个选择器匹配到的元素合并后一起返回，你可以指定任意多个选择器，并将匹配到的元素合并到一个结果内。其中p.myclass是表示匹
 配元素p class="myclass"。
@@ -30,19 +30,19 @@
 通过样式名称来查找元素这个功能不错，但是通常不需要查询整个页面。有时可能只需要查找某个元素的子元素。只有这个方法返回的是jQuery对
 象才能进行链式操作。如果通过DOM元素之间的层次关系来获取特定元素，例如后代元素，子元素，相邻元素，兄弟元素等，则需要使用层次选择器。
 
-1. ancestor descendant
+1. ancestor descendant  
 用法：$("form input");返回值是集合元素。
 说明：在给定的祖先元素下匹配所有后代元素，这个要和"parent > child"区分开。祖先元素中查找，包含子元素和子元素的子元素。
 
-2. parent > child
+2. parent > child  
 用法：$("form > input");返回值是集合元素。
 说明：在给定的父元素下匹配所有子元素。注意：要区分好后代元素与子元素。父元素中查找只包含子元素，不包含子元素的子元素。
 
-3. prev + next
+3. prev + next  
 用法：$("label + input");返回值是集合元素。
 说明：匹配所有紧接在prev元素之后的next元素。
 
-4. prev ~ siblings
+4. prev ~ siblings  
 用法：$("form ~ input");返回值是集合元素。
 说明：匹配prev元素之后的所有siblings元素。注意：是匹配之后的元素，不包含该元素在内，并且jQuery的siblings方法匹配的是
 和prev同辈的元素，其后背元素不被匹配。注意：("prev ~ div")选择器只能选择"prev"元素后面的同辈元素；而jQuery中的方法
@@ -51,44 +51,44 @@ siblings()与前后位置无关，只要是同辈节点就可以选取。
 ###### 属性选择器
 属性选择器十分强大，允许基于属性来选择元素。你可以轻易区分这些选择器，因为它们都是用方括号包围。
 
-1. [attribute]
-用法：$("div[id]");返回值是集合元素。
+1. [attribute]  
+用法：$("div[id]");返回值是集合元素。  
 说明：匹配包含给定属性的元素。例子中是选取了所有带“id”属性的div标签。
 
-2. [attribute=value]
-用法：$("input[name='newsletter']");返回值是集合元素。
+2. [attribute=value]  
+用法：$("input[name='newsletter']");返回值是集合元素。  
 说明：匹配给定的属性是某个特定值的元素，例子中选取了所有name属性是newsletter的input元素。**属性值必须和选择器中声明
 的值严格匹配**
 
-3. [attribute!=value]
-用法：$("input[name!='newsletter']");返回值是集合元素。
+3. [attribute!=value]  
+用法：$("input[name!='newsletter']");返回值是集合元素。  
 说明：匹配所有不含有指定的属性，或者属性不等于特定值的元素。此选择器等价于：not([attr=value])，要匹配含有特定属性但
 不等于特定值的元素，请使用[attr]:not([attr=value])。
 
-4. [attribute^=value]
-用法：$("input[name^='news']");返回值是集合元素。
+4. [attribute^=value]  
+用法：$("input[name^='news']");返回值是集合元素。  
 说明：匹配给定的属性是以某些值开始的元素。
 
-5. [attribute$=value]
-用法：$("input[name$='letter']");返回值是集合元素。
+5. [attribute$=value]  
+用法：$("input[name$='letter']");返回值是集合元素。  
 说明：匹配给定的属性是以某些值结尾的元素。
 
-6. [attribute*=value]
-用法：$("input[name*='man']");返回值是集合元素。
+6. [attribute*=value]  
+用法：$("input[name*='man']");返回值是集合元素。  
 说明：匹配给定的属性是以包含某些值的元素。
 
-7. [attributeFilter1][attributeFilter2][attributeFilterN]
-用法：$("input[id][name$='man']");返回值是集合元素。
+7. [attributeFilter1][attributeFilter2][attributeFilterN]  
+用法：$("input[id][name$='man']");返回值是集合元素。  
 说明：复合属性选择器，需要同时满足多个条件时使用，又是一个组合，这种情况我们实际使用的时候很常用。这个例子中选择的是
 所有含有id属性，并且它的name属性是以man结尾的元素。
 
-8. [attribute|=value]
-用法：$("class|='main'");返回值是集合元素。
+8. [attribute|=value]  
+用法：$("class|='main'");返回值是集合元素。  
 说明：“包含前缀”选择器，它会选中所有属性以给定值作为独立单词开头的元素。这个选择器会找到所有的class="main"的div元
 素，以及所有的class名以mian-开头的div元素，比如class="main-footer"。
 
-9. [attribute~=value]
-用法：$("class~='javascript'");返回值是集合元素。
+9. [attribute~=value]  
+用法：$("class~='javascript'");返回值是集合元素。  
 说明：它会搜索属性值中的特定单词。
 
 ### jQuery过滤器介绍
@@ -100,65 +100,134 @@ siblings()与前后位置无关，只要是同辈节点就可以选取。
 特殊需求的查询机制。**需要注意的是通常索引都是从0开始，第一个元素是0，第二个元素是1，此外类推在位置过滤器中都
 是使用的是元素集合的索引。**
 
-1. :first
-用法：$("tr:first");返回值是单个元素组成的集合。
+1. :first  
+用法：$("tr:first");返回值是单个元素组成的集合。  
 说明：匹配找到的第一个元素。
 
-2. :last
-用法：$("tr:last");返回值是单个元素组成的集合。
+2. :last  
+用法：$("tr:last");返回值是单个元素组成的集合。  
 说明：匹配找到的最后一个元素。
 
-3. :even
-用法：$("tr:even");返回值是集合元素。
+3. :even  
+用法：$("tr:even");返回值是集合元素。  
 说明：匹配上下文中的偶数元素，tr:even只返回偶数索引元素。
 
-4. :odd
-用法：$("tr:even");返回值是集合元素。
+4. :odd  
+用法：$("tr:even");返回值是集合元素。  
 说明：匹配上下文中的奇数元素，tr:odd只返回奇数索引元素。
 
-5. :eq(n)
-用法：$("tr:eq(n)");返回值是单个元素组成的集合。
+5. :eq(n)  
+用法：$("tr:eq(n)");返回值是单个元素组成的集合。  
 说明：匹配给定索引值的元素，eq(0)就是获取第一个tr元素，括号里面的是索引值，不是元素排列数。
 
-6. :gt(n)
-用法：$("tr:gt(0)");返回值是集合元素。
+6. :gt(n)  
+用法：$("tr:gt(0)");返回值是集合元素。  
 说明：匹配所有大于给定索引值的元素。
 
-7. :lt(n)
-用法：$("tr:lt(2)");返回值是集合元素。
+7. :lt(n)  
+用法：$("tr:lt(2)");返回值是集合元素。  
 说明：匹配所有下雨给定索引值的元素。
 
 ###### 子过滤器
 jQuery支持CSS选择器和规范。因此，可以使用CSS3中的子伪样式类(pseudo-class)，它们允许根据父元素内部的位置来选择元素。
 假设想根据给定元素的内部位置来选择内部元素，使用通用选择器。**子过滤器继承自CSS规范，因此它假定索引是从1开始而
-不是从0开始。**
+不是从0开始。子元素的位置是相对于**
 
-1. :nth-child
-用法：$("ul li:nth-child(2)");返回值是单个元素组成的集合。
+1. :nth-child(n)  
+用法：$("ul li:nth-child(2)");返回值是单个元素组成的集合。  
 说明：匹配其父元素下的第2个子元素，这个选择器和之前说的位子过滤器中的eq()有些类似，不同的地方就是前者是从0开始，
 后者是从1开始。
 
-2. :first-child
-用法：$("ul li:first-child");返回值是单个元素组成的集合。
+2. :first-child  
+用法：$("ul li:first-child");返回值是单个元素组成的集合。  
 说明：匹配第一个子元素。‘first’只匹配上下文中的第一个子元素。
 
-3. :last-child
-用法：$("ul li:last-child");返回值是单个元素组成的集合。
+3. :last-child  
+用法：$("ul li:last-child");返回值是单个元素组成的集合。  
 说明：匹配最后一个子元素。‘last’只匹配上下文中的最后一个子元素。
 
-4. :nth-child(even|odd)
-用法：$("ul li:nth-child(even)");返回值是集合元素。
+4. :nth-child(even|odd)  
+用法：$("ul li:nth-child(even)");返回值是集合元素。  
 说明：匹配子元素位子为偶数的子元素集合。
 
-5. :nth-child(Xn+Y)
-用法：$("ul li:nth-child(3n+1)");返回值是集合元素。
+5. :nth-child(Xn+Y)  
+用法：$("ul li:nth-child(3n+1)");返回值是集合元素。  
 说明：匹配选择任意3倍数后面一位的元素。
 
-6. :only-child
-用法：$(ul li:only-child);返回值是单元素组成的集合元素。
+6. :only-child  
+用法：$(ul li:only-child);返回值是单元素组成的集合元素。  
 说明：匹配某个元素是父元素中唯一的子元素，在本例中如果父元素ul还有其他的子元素则匹配不成功。意思就是只有一个
 才会被匹配成功。
 
+7. first-of-type  
+用法：$(first-of-type);返回值是单个元素组成的集合元素。    
+说明：匹配给定类型的第一个子元素。  
+
+8. last-of-type  
+用法：$(last-of-type);返回值是单个元素组成的集合元素。  
+说明：匹配给定类型的最后一个子元素。
+
+9. nth-last-child(n)  
+用法：$("nth-last-child(n)");返回值是单个元素组成的集合元素。  
+说明：匹配从最后一个元素到第一个元素计数的第n个子元素。
+
+10. nth-last-child(even|odd)、nth-last-child(Xn+Y)用法和说明同上。
+
+11. nth-of-type(n)  
+用法：$("nth-of-type(n)");返回值是单个元素组成的集合元素。    
+说明：匹配具备同样元素名的第n个子元素。
+
+12. nth-of-type(even|odd)、nth-of-type(Xn+Y)用法和说明同上。
+
+13. nth-last-of-type(n)、nth-last-of-type(even|odd)、nth-last-of-type(Xn+Y)  
+用法：参看上面解释。  
+说明：匹配是从最后一个元素开始到第一个元素的顺序进行。
 
 
+###### 表单过滤器
+jQuery也提供了一些强大的自定义过滤器，不通过CSS，标识元素也很简单。针对HTML表单元素有一些功能强大的过滤器来简
+化代码，详细的jQuery表单过滤器查看下表：
+
+|选择器|描述|在CSS中是否支持|
+|:----:|:--------:|:----:|
+|:checkbox|只选择复选框元素(input[type=checkbox])|否|
+|:checked|只选择状态处于被选中的元素，复选框、单选框或者下拉框元素|是|
+|:disabled|只选择禁用状态的元素|是|
+|:enabled|只选择启用状态的元素|是|
+|:file|只选择文件input元素(input[type=file])|否|
+|:focus|只选择处于聚焦状态的元素|是|
+|:image|只选择图片input元素(input[type=image])|否|
+|:input|只选择表单元素(input,select,textarea,button)|否|
+|:password|只选择密码元素(input[type=password])|否|
+|:radio|只选择单选元素(input[type=radio])|否|
+|:reset|只选择重置元素(input[type=reset]或button[type=reset])|否|
+|:selected|只选择处于选中状态的列表元素|否|
+|:submit|只选择提交按钮(button[type=submit]或者input[type=submit])|否|
+|:text|只选择文本元素(input[type=text])或者没有指定类型的元素(因为默认是type=text)|否|
+
+###### 内容过滤器
+在jQuery官方文档里可以看到另外一种类型的过滤器即内容过滤器(content filters)。正如名字的含义一样，这些过滤器
+是用来根据内容选择的。例如，可以基于某个词语进行选择，或者选择空内容的元素。注意，根据内容并不是说只根据文本
+内容，也可能是子元素。具体过滤器见下表：
+
+|选择器|描述|在CSS中是否支持|
+|:----:|:--------:|:----:|
+|:contains(text)|选择包含特定文本的元素(子元素和文本都会进行评估)|否|
+|:empty|选择没有子元素的元素(包含文本)|是|
+|:has(selector)|选择包含至少一个元素匹配特定选择器的元素|否|
+|:parent|选择包含至少有一个子节点的元素(子节点是文本或者元素)|否|
+
+######## 其他过滤器
+jQuery支持的其余的过滤器见下表：
+
+|选择器|描述|在CSS中是否支持|
+|:----:|:--------:|:----:|
+|:animated|只选择动画模式的元素|否|
+|:header|只选择头元素:\<h1>到\<h6>|否|
+|:hidden|只选择隐藏元素|否|
+|:lang(language)|只选择采用特定语言的元素|是|
+|:not(selector)|排除特定选择器元素|是|
+|:root|选择文档的根元素|是|
+|:target|通过文档的URL框架标识来选择目标元素|是|
+|:visible|只选择可见的元素|否|
 
