@@ -25,3 +25,23 @@ set "JAVA_OPTS=%JAVA_OPTS% %JSSE_OPTS% -Dfile.encoding=UTF-8"
 *  右键 --> 新建 --> 字符串值；
 *  输入数值名称 autorun ；输入数值数据 chcp 65001，点击确定。
 
+######最新解决方案
+直接注销Tomcat安装目录中conf文件夹下logging.properties文件中的一行配置信息如下：
+```
+#java.util.logging.ConsoleHandler.encoding = UTF-8
+```
+
+##### request和response乱码问题
+经过两天的测试Tomcat8、9都存在post请求默认编码ISO-8859-1，使用
+`request.setCharacterEncoding("UTF-8")`无法正确解析中文还是使用默认的ISO-8859-1
+的编码。解决方案如下：
+```
+String temp = req.getParameter(param);
+
+if(temp != null) {
+    byte[] encode = temp.getBytes("ISO-8859-1");
+    return new String(encode, "UTF-8");
+}else {
+	return "";
+}
+```
