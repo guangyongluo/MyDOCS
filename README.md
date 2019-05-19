@@ -9,3 +9,4 @@
 * 2017-09-28 [Git相关文档完成](git)
 * 2018-01-15 [Maven相关文档完成](maven/maven.md)
 * 2018-04-19 [Servlet&JSP相关文档完成](JavaWeb)
+* 2018-10-15 [javascript&jQuery相关文档](javascript)
