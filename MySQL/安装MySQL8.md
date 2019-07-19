@@ -61,7 +61,7 @@ yum install mysql-community-server
 ###### 默认安装目录已经修改目录配置
 以上两种安装方法默认的安装目录都是/var/lib/mysql
 
-###### 常用命令
+###### 基本常规命令
 ```
 #查看当前用户可以操作的数据库
 show database;
@@ -69,7 +69,33 @@ show database;
 show tables;
 #查看表结构
 desc ***
+#查看当前使用的数据库
+select database();
+```
 
+###### 创建用户、赋予权限和创建角色
+所有用户信息及权限都存在mysql.user表中。可以直接通过修改mysql.user表来创建用户并赋予权限。一般不直接操作mysql.user表，使
+用mysql提供的内置命令来创建及管理MySQL用户，可以使用GRANT、REVOKE、SET PASSWORD或RENAME USER等用户管理语句简介修改mysql.
+user表，并立即再次将所有修改的信息加载到内存，而直接修改mysql.user表不会影响权限检查，除非你重新启动服务器或指示其重新加
+载表。可以通过FLUSH PRIVILEGES语句来重新加载表。常用的命令如下：
+```
+#创建用户
+create user if not exists '***'@'***' identified with mysql_native_password by '***';
+#删除用户
+drop user '***'@'***';
+#赋予权限给用户
+grant select on ***.*** to '***'@'***';
+#撤销权限
+revoke delete on ***.*** from '***'@'***';
+```
+MySQL的角色是个一个权限的集合。创建一个角色后赋予权限给角色后指定用户角色就不再需要为用户配置单一的权限了,命令如下；
+```
+#创建角色
+create role '***';
+#为角色赋权限
+grant select on ***.*** to '***';
+#为用户指定角色
+grant '***' to '***'@'***';
 ```
 
 
