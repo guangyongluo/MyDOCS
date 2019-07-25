@@ -98,5 +98,20 @@ grant select on ***.*** to '***';
 grant '***' to '***'@'***';
 ```
 
+###### 查询数据并保存文件
+将输出结果保存到文件中，所需要的是FILE权限。FILE是一个全局权限，它不仅仅针对某个数据库，但是可以通过限制用户读权限来控制FILE
+权限导出数据的范围。首先，应该设置secure_file_priv并重启数据库。通过使用命令`show global variables like '%secure%';`来查
+看当前数据库的设置。一般Linux默认设置为`/var/lib/mysql-files`。使用如下命令导出数据文件和从数据文件中导入数据到MySQL数据库
+```
+#导出数据文件
+select * into outfile ***.csv fields terminated by ',' optionally enclosed by '"' lines terminated by '\n'
+from *
+where *;
+#从文件中加载数据
+load data infile xxx.csv into table *** fields terminated by ',' optionally enclosed by '"' lines terminated by '\n';
+```
+> 谈谈插入数据到数据库中两个重要的关键字的含义（replace\ignore）:如果导入的行不存在，则直接插入新行。
+> replace:如果该行已经存在，则使用新数据更新以前的数据，使用主键来判定行是否存在；
+> ignore:如果该行已经存在，则使用新数据被忽略，使用主键来判定行是否存在；
 
-
+###### 配置MySQL
