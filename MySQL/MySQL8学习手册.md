@@ -115,3 +115,24 @@ load data infile xxx.csv into table *** fields terminated by ',' optionally encl
 > ignore:如果该行已经存在，则使用新数据被忽略，使用主键来判定行是否存在；
 
 ###### 配置MySQL
+MySQL三种配置方法：
+* 配置文件:MySQL有一个配置文件，可以指定数据位置、MySQL使用的内存大小等各种参数
+* 启动脚本:可以直接将参数传递给mysqld进程。启动脚本仅在调用服务器时才有效。
+* 使用set命令:这个命令只能修改动态变量，改动将在下次重启后失效。
+默认的MySQL配置文件在/etc/my.cnf或者/etc/mysql/my.cnf，这个文件主要由以下几个部分组成：
+* [mysqld]:该部分由mysql命令行客户端读取；
+* [client]:该部分由所有连接的客户端读取(包括mysql, cli)；
+* [mysqldump]:该部分由mysql服务器读取；
+* [mysql_safe]:该部分由名为mysqldump的备份工具读取；
+* [server]:该部分由mysqld_safe进程读取(MySQL服务器启动脚本)。
+MySQL有两种类型的参数
+* 静态参数:重启MySQL服务器后才能生效。
+* 动态参数:可以在不重启MySQL服务器的情况下更改及时生效。
+使用全局变量和回话变量，你可以通过连接到MySQL并执行set命令来设置参数
+* 全局变量:适用于所有新的连接。
+* 回话变量:仅适用于当前连接。
+MySQL配置参数
+* datadir:设置数据目录，由MySQL服务器管理的数据存储在名为数据目录的目录下。
+* innodb_buffer_pool_size:决定InnoDB存储引擎可以使用多少内存空间来缓存内存中的数据和索引。
+* innodb_buffer_pool_instances:可以将InnoDB缓冲池划分为不同的区域，以便在不同线程读取和写入缓存页面时减少挣用，从而提高并发性。
+* innodb_log_file_size:重做日志空间的大小，用于数据库崩溃时重放已提交的事务。
