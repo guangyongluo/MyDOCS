@@ -197,6 +197,71 @@ set sql_log_bin = 1;
 
 ###### 二进制日志的格式
 二进制日志可以写成下面三种格式:
-1. STATEMENT: 记录实际的SQL语句;
+1. STATEMENT: 记录实际的SQL语句; 
 2. ROW: 记录每行所做的更改;
 3. MIXED: 当需要时，MySQL会从STATEMENT切换到ROW
+
+###### MySQL事务
+事务的ACID：事务具有四个特性：原子性(Atomicity)、一致性(Consistency)、隔离性(Isolation)和持续性(Durability)。这四个特性简称为ACID特性。
+1. 原子性：事务是数据库的逻辑工作单位，事务中包含的各操作要么做，要么都不做；
+2. 一致性：事务执行的结果必须使数据库从一个一致性状态变到另一个一致性状态。因此当数据库只包含成功事务提交的结果时，就是数据库处于一致性状态。如果数据库
+系统运行中发生故障，有些事务尚未完成就被迫中断，这些未完成事务对数据库所做的修改有一部分写入物理数据库，这时数据库就处于一种不正确的状态或者说不一致的状态
+3. 隔离性：一个事务的执行不能干扰其他的事务，即一个事务内部的操作及使用的数据对其他并发事务时隔离的，并发执行的各个事务之间不能相互干扰。
+4. 持续性：指一个事务一旦提交，它对数据库中的数据的改变就应该是永久性的，接下来的其他操作或故障不应该对其执行结果有任何影响。
+
+###### MySQL四种隔离级别
+read uncommitted: 这个级别基本不用，其允许事务读取未提交的数据；
+read committed: 当前事务只能读取另一个事务提交的数据，这也称为不可重复读；
+repeatable read: 一个事务通过第一条语句只能看到相同的数据，即使另一个事务已提交数据。在同一个事务中，读取通过第一次读取建立快照时一致的；
+serializable: 通过把选定的所有行锁起来，序列化可以提供最高级别的隔离。序列化等待被锁的行，并且总是读取最新提交的数据。
+
+###### MySQL主从复制工作流程细节
+1. MySQL支持单项、异步复制，复制过程中一个服务器充当主服务器，而一个或多个其他服务器充当从服务器。MySQL复制基于主服务器在二进制日志中跟踪所有对数据库的更
+改。因此，要进行复制，必须在主服务器上启用二进制日志。每个从服务器接收主服务器上已经记录到其二进制日志的保存更新。当一个从服务器连接主服务器时，它通知主服
+务器定位到从服务器在日志中读取的最后一次成功更新位置。从服务器接收从那时起发生的任何更新，并在本机上执行相同的更新。然后封锁并等待主服务器通知新的更新。从
+服务器执行备份不会干扰主服务器，在备份过程中主服务器可以继续处理更新。
+2. MySQL使用3个线程来执行复制功能，其中两个线程(SQL线程和IO线程)在从服务器上，另一个线程(IO线程)在主服务器上。当发出start slave时，从服务器创建一个IO线
+程，以连接服务器并让它发送记录在其二进制日志中的语句。主服务器创建一个线程将二进制日志中的内容发送到从服务器。该线程可以即为主服务器上show processlist的输
+出中的binlog dump线程。从服务器IO线程读取主服务器binlog dump线程发送的内容并将数据拷贝到从服务器目录中的本地文件中，即中续日志。第三个线程SQL线程由从服务
+器创建，用于读取中续日志并执行日志中包含的更新。在从服务器上，读取和执行更新语句被分成两个独立的任务。当从服务器启动时，其IO线程可以很快地从主服务器索取所有
+二进制日志内容，即使SQL线程执行更新的渊源滞后。
+
+操作过程如下:
+1. 在主库上，启用二进制日志记录并设置server_id;
+```
+# vi /etc/mycnf
+[mysqld]
+log_bin=/path/serverl
+server_id=***
+```
+2. 在主库上，创建一个复制用户;
+```
+grant replication slave on *.* to '***'@'%' identified by 'password';
+```
+3. 在从库上，设置唯一的server_id选项;
+4. 在从库上，通过远程连接从主库进行备份;
+```
+#mysqldump :
+mysqldump -h <master_host> -u backup_user --password=<pass> --all-databases --routines --events --single_transaction --master-data > dump.sql
+mysql -u <user> -p -f < dump.sql
+########
+#mydumper :
+mydumper -h <master_host> -u backup_user --password=<password> --user-savepoints --trx-consistensy-only --kill-long-queries --outputdir /tmp
+myloader --directory=/tmp --user=<user> --password=<password> --queries=per-transaction=5000 --threads=8 --overwrite-tables
+```
+5. 在从库上，待备份完成后恢复此备份;
+```
+change master to master_host='<master_host>', master_user='binlog_user', master_password='binlog_user_password', master_log_file='log_file_name'
+, master_log_pos=<position>
+```
+6. 查看复制的状态。
+
+###### 管理表空间
+* 系统表空间(共享表空间):InnoDB系统表空间包含InnoDB数据字典(与InnoDB相关的对象的元数据)，它是doublewrite buffer、change buffer和UNDO日志的存储区域。系
+统表空间还包含在系统表空间中创建的表以及所有用户创建的表的索引数据。系统表空间被认为是共享的表空间，因为它由多个表共享。系统表空间用一个或多个数据文件表示
+，默认情况下，将在MySQL数据目录中创建一个名为ibdata1的系统数据文件。系统数据文件的大小和数量由innodb_data_file_path启动项控制。
+* 独立表空间:每个独立表空间都是一个单表表空间，它是在自己的数据文件中创建的，而不是在系统表空间中创建的。当启用innodb_file_per_table选项时，将在独立表空间
+中创建表；否则将在系统表空间中创建InnoDB表。每个独立表空间由一个.ibd数据文件表示，该文件默认是在数据库目录中创建的。独立表空间支持DYNAMIC和COMPRESSED的行
+格式，这些格式支持可变长度的数据和压缩的跨页存储等特性。
+* 通用表空间:通用表空间使用语法create tablespace创建的共享InnoDB表空间。通用表空间可以在MySQL数据目录之外创建，可以容纳多张表，并支持所有行格式的表。
+* UNDO表空间:UNDO(撤销)日志是与单个事务关联的UNDO日志记录的集合。
