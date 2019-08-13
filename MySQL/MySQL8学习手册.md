@@ -165,6 +165,12 @@ MySQL配置参数
 2. WRITE: 当一个表被锁定为WRITE时，除持有该锁的会话之外，其他任何会话都不能读取或向表中写入数据。除非现有锁被释放，否则其他任何会话都不能获得任何
 锁。这就是为什么WRITE锁被称为排他锁。如果有任何读取、写入尝试，该操作将处于等待状态，直到WRITE锁被释放。
 
+###### MySQL的备份与恢复
+备份分为逻辑备份和物理备份两种形式：逻辑备份是将所有数据库、表结构、数据和存储例程导出到一组可以再次执行的SQL语句中，以重新创建数据库的状态；物理备份是指包
+含系统上的所有文件，这里的系统是指数据库用于存储所有数据实体的系统。
+逻辑备份工具:mysqldump、mysqlpump和mydumper。
+物理备份工具:XtraBackup
+
 ###### MySQL二进制日志
 二进制日志包含数据库的所有更改记录，包含数据和结构两方面。二进制日志不记录SELECT或SHOW等不修改数据的操作。运行带有二进制日志的服务器会带来轻微的性
 能影响。二进制日志能保证数据库出故障时数据是安全的。只要安全的事件或事物会被记录或回读。
@@ -265,3 +271,71 @@ change master to master_host='<master_host>', master_user='binlog_user', master_
 格式，这些格式支持可变长度的数据和压缩的跨页存储等特性。
 * 通用表空间:通用表空间使用语法create tablespace创建的共享InnoDB表空间。通用表空间可以在MySQL数据目录之外创建，可以容纳多张表，并支持所有行格式的表。
 * UNDO表空间:UNDO(撤销)日志是与单个事务关联的UNDO日志记录的集合。
+* MySQL数据字典——mysql.ibd
+
+##### 将独立表空间复制到另一个实例
+1. 在目标库上创建与源库上定义相同的表；
+2. 在目标库上Discard表空间；
+`alter table *** discard tablespace;`
+3. 在源库上执行`flush tables *** for export;`
+4. 在源库上从数据目录中将所有与表相关的文件(.ibd, .cfg)复制到目标库的数据目录中；
+5. 在源库上解锁表格`unlock tables;`
+6. 在目标库上，确保这些文件的所有权被设置为mysql；
+7. 在目标库上，导入表空间
+`alter table *** import tablespace;`
+8. 在目标库上验证数据。
+
+###### 日志管理
+* 错误日志：其中包含了mysqld的启动和宕机次数的记录，还包含了一些诊断信息，如错误、警告。以及服务器在启动、运行及关闭期间发出的提示信息。使用`show variables 
+like 'log_error%'`来查看配置参数；
+* 通用日志：记录所有客户端连接发送过来的SQL语句，如果怀疑客户端存在错误或者想知道客户端发送mysqld的具体内容时，通用查询日志是非常有用的。
+```
+set global general_log='NO'
+set global general_log_file='/path/***'
+```
+* 慢查询日志：慢查询日志包含了执行时间超过long_query_time秒，以及至少扫描了min_examined_row_limit行的SQL语句
+```
+set global long_query_time=*;
+set global slow_query_log_file='/path/***'
+set global slow_query_log=1
+```
+
+###### 索引
+优点：可以快速检索，减少I/O次数，加快检索速度；根据索引分组和排序，可以加快分组和排序；
+缺点：索引本身也是表，因此会占用存储空间，一般来说，有索引的数据表占用的空间是没有索引数据表的1.5倍；索引表的维护和创建需要时间成本，这个成本随着数据量的增大
+而增大；构建索引会降低数据表的修改操作(删除、添加、修改)的效率，因为在修改数据表的同时还需要修改索引表；
+
+索引的分类：
+1. 主键索引：即主索引，根据主键pk_cloumn建立索引，不允许重复，不允许空置；`alter table 'table_name' add primary key pk_index('col')`
+2. 唯一索引：用来建立索引的列的值必须使唯一的，允许空置；`alter table 'table_name' add unique index_name('col')`
+3. 普通索引：用表中的普通列构建的索引，没有任何限制；`alter table 'table_name' add index index_name('col')`
+4. 全文索引：用大文本对象的构建的索引；`alter table 'table_name' add fulltext index ft_index('col')`
+5. 组合索引：用多个列组合构建的索引，这多个列中的值不允许有空值；`alter table 'table_name' add index index_name('col1','col2','col3')`
+遵循最左前缀原则，把最常用作为检索或排序的列放在最左，依次递减，组合索引相当于建立了col1,col1col2,col1col2col3三个索引，而col2或者col3是不能使用索引的。在
+使用组合索引的时候可能因为列名长度过长而导致索引的key太大，导致效率降低，在允许的情况下，可以只取col1和col2的前几个字符作为索引。
+
+索引的实现原理：MySQL支持诸多存储引擎，而各种存储引擎对索引的支持也各不相同，因此MySQL数据库支持多种索引类型，如BTree索引、B+Tree索引、哈希索引、全文索引等等
+1. 哈希索引：只有内存存储引擎支持哈希索引，哈希锁引用索引列的值计算该值的hashcode，然后在hashcode相应的位置存执该值所在行数据的物理位置，因为使用散列算法，因
+此访问速度非常快，但是一个值只能对应一个hashcode，而且是散列的分布方式，因此哈希索引不支持范围查找和排序的功能。
+2. 全文索引：FULLTEXT索引仅用于MyISAMySQL和InnoDB针对较大的数据，生成全文索引非常的消耗时间和空间。对于文本的大对象，或者较大的char类型的数据，如果使用普通索
+引那么匹配文本前几个字符还是可行的，但是想要匹配文本中间的几个单词，那么就要使用Like来匹配，这样需要很长的时间类处理，响应时间会大大增加，这种情况，就可使用FULLTEXT
+索引了，在生成FULLTEXT索引时，会为文本生成一份单词的清单，在索引时根据这个单词清单来索引。FULLTEXT可以在创建表的时候创建，也可以在需要时候使用alter或者
+create index来创建。
+3. Btree索引：目前大部分数据库系统及文件系统都采用BTree或其变种B+Tree作为索引结构。为了描述BTree，首先定义一条数据记录为一个二元组[key, data]，key为记录的键值
+，对于不同数据记录，key时互不相同的；data为数据记录除key外的数据。那么B-Tree需要满足以下的条件
+* d为大于1的一个正整数，称为B-tree的度；
+* h为一个正整数，称为B-tree的高度；
+* 每个非叶子节点由n-1个key和n个指针组成，其中d<=n<=2d
+* 每个叶子节点最少包含一个key和两个指针，最多包含2d-1个key和2d个指针，叶节点的指针均为null
+* 所有叶节点具有相同的深度，等于数高h
+* key和指针互相间隔，节点两端时指针
+* 一个节点中的key从左到右非递减排列
+* 所有节点组成树结构
+* 每个指针要么为null，要么指向另外一个节点
+* 如果某个指针在节点node最左边且不为null,则其指向节点的所有key小于key1,其中key1为node的第一个key的值
+* 如果某个指针在节点node最右边且不为null,则其指向节点的所有key大于keyn,其中keyn为node的最后一个key的值
+* 如果某个指针在节点node的最优相邻key分别是keyi和keyj且不为null，则其指向节点的所有key小于keyj且大于keyi
+4. B+Tree索引：B+Tree是BTree的改进型，一般来说，B+Tree比B-Tree更适合实现外存储索引结构，在数据库系统或文件系统中使用B+Tree结构都在经典的B+Tree的基础上进行了
+优化，增加了顺序访问指针。在B+Tree的每个叶子节点增加一个指向相邻叶子节点的指针，就形成了带有顺序访问指针的B+Tree。
+
+
