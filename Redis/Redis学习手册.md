@@ -129,7 +129,7 @@ Redis拥有两种不同形式的持久化方法，它们都可以用小而紧凑
 
 |命令|用例和描述|
 |:--------:|:----------------:|
-|SORT|SORT source-key [BY pattern] [LIMIT offset count] [GET pattern [GET pattern ...]] [ASC|DESC] [ALPHA] [STORE dest-key]:根据给定的选项，对输入列表、集合或者有序集合进行排序，然后返回或者存储排序结果|
+|SORT|SORT source-key [BY pattern] [LIMIT offset count] [GET pattern [GET pattern ...]] [ASC&#124;DESC] [ALPHA] [STORE dest-key]:根据给定的选项，对输入列表、集合或者有序集合进行排序，然后返回或者存储排序结果|
 
 8. 键的过期时间
 
