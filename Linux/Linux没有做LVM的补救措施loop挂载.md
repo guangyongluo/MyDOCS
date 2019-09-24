@@ -9,6 +9,8 @@
    du -sh /opt/ITMsize
          →查看是否创建成功创建5G大小的该文件
    如图：
+   
+   
 ![图1-1][loop_mount01]
 【注】请勿在执行以上命令前自己创建该文件
 
@@ -20,6 +22,8 @@
         →查找第一个未使用的回环设备
    【若/dev/loop0已被使用，则/dev/loop1默认成为第一个未使用回环设备】
 例如：图中所示/opt/test已使用了/dev/loop0,所以losetup -f 查看到的的第一个未使用的回环设备便是/dev/lopp1，依次类推...
+
+
 ![图1-2][loop_mount02]
 
 4. losetup -f /opt/ITMsize
@@ -29,11 +33,15 @@
   losetup -a
         →查看是否成功添加回环设备 
   如图：
+  
+  
 ![图1-3][loop_mount03]
 
 5. mkfs -t ext3 /dev/loop0
         →将虚拟过的回环设备格式化，这里格式化为ext3文件系统（以实际情况为准）
    如图：
+   
+   
 ![图1-4][loop_mount04]
 
 6. mount /dev/loop0 /opt/itm6
@@ -41,6 +49,8 @@
    df -h 
         →查看挂载的系统空间信息
   如图：
+  
+  
 ![图1-5][loop_mount05]
 ![图1-6][loop_mount06]
 
@@ -54,6 +64,8 @@
    df -h
          →查看挂载的系统空间信息（已无/opt/itm6/logs信息）
    如图：
+   
+   
 ![图1-7][loop_mount07]    
 
 2、losetup -d /dev/loop0
@@ -62,6 +74,8 @@
          →查看所有已使用的回环设备状态
            （已无/dev/loop0信息）  
   如图：
+  
+  
 ![图1-8][loop_mount08] 
 
 ###### 如何设置开机挂载
