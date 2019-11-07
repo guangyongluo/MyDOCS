@@ -124,3 +124,72 @@ MongDB必须扫描全表，在数据量大时，效率差别就很明显，对�
 
 删除索引：我们对已经创建索引进行删除，可以针对具体的集合中索引进行删除，也可以对所有的集合中的索引删除。删除方法1.使用索引名称进行删除`db.collection.dropIndex(index)`
 ，删除方法2.删除集合上所有的索引`db.collection.dropIndexes()`我们对集合中的所有索引进行删除，除了_id索引除外。
+
+###### MongoDB聚合函数
+
+###### MongoDB副本集
+
+###### MongoDB切片
+
+###### MongoDB认证、添加用户、用户权限控制
+1. 创建用户账号：在创建用户前，我们使用createUser(user, writeConcern)，该方法以前是addUser()，但是已经不能用了，使用createUser()代替。其中user的文档定义如下：
+```
+{  
+	user:"<name>",
+	pwd:"<cleartext password>",
+	customData:{<any information>},
+	roles:[
+		{role:"<role>", db:"<database>"} | "<role>",
+		...
+	],
+	authenticationRestrictions:[
+		{
+			clientSource:["<IP>"|"<CIDR range>", ...]
+			serverAddress:["<IP>"|"<CIDR range>", ...]
+		},
+		...
+	]
+}
+```
+writeConcern:该文档是该操作的关注等级
+- w选项：允许的值分别是1、0、大于1的值、“majority”;
+- j选项：确保mongod实例写数据到磁盘上的journal(日志)，这可以确保mongod意外关闭不会丢失数据。设置true启用。
+- wtimeout选项：指定一个时间限制，以毫秒为单位。wtimeout只适用于w大于1。
+
+创建用户所需的字段
+
+|字段|格式|描述|
+|:--------:|:--------:|:----------------:|
+|user|字符串|独一无二的用户名|
+|roles|数组|一个用户的角色数组，MongoDB提供了大量可以分配的角色|
+|pwd|字符串|可选，账号密码，该字段可以是散列值或字符串，不过存储是按照散列值的方式存储的|
+|customData|任何数据|可选，可以为任何信息。此字段可用于存储管理员希望与此特定用户关联的任何数据。例如，这可能时用户的全名或雇员id|
+|authenticationRestrictions|array|可选，服务器在创建用户上强制执行的身份验证限制。指定可连接服务器的访问用户的IP地址或者指定可连接服务器的服务器ip地址列表|
+
+简单来说，clientSource 就是服务器针对客户端的IP 做白名单控制。serverAddress 就是客户端针对服务端的IP 做白名单控制。也就是说，客户端和服务器端都可以维护一个
+白名单进行限制。
+
+可分配的用户账号角色 
+
+|命令|用例和描述|
+|:--------:|:----------------:|
+|read|让用户能够读取当前数据库中的任何集合的数据|
+|readAnyDatabase|和read一样能够读取任何集合的数据，不过该用户可以读取任何数据库的，不在是指定数据库|
+|readWrite|用户可以读写当前数据库中的任何集合，读写包括插入、删除、更新文档以及创建、重命名、删除集合|
+|readWriteAnyDatabase|与readWrite权限一样，不过其可以操作所有数据库，不再只能操作指定数据库|
+|dbAdmin|让用户能够读写当前数据库以及清理、修改、压缩、获取统计信息和执行检查|
+|dbAdminAnyDatabase|与dbAdmin权限一样，不过其可以操作所有数据库，不再只能操作指定数据库|
+|dbOwner|数据库所有者可以在数据库上执行任何管理操作。这个角色结合readWrite、dbAdmin、userAdmin|
+|clusterManager|3.4版本以后新特性，提供集群的管理和监视操作。具有此角色的用户可以访问、配置和访问本地数据库，它们分别用于分片和复制中|
+|clusterMonitor|3.4版本新特性，提供对监视工具的只读访问权限，比如MongoDB Cloud Manager和Ops Manager|
+|hostManager|提供监视和管理服务器的能力|
+|clusterAdmin|让用户能够管理MongoDB，包括连接、集群、复制、列出数据库、创建数据库、和删除数据库|
+|userAdmin|让用户能够在当前数据库中创建和修改用户账户|
+|userAdminAnyDatabase|与userAdmin相同，过其可以操作所有数据库，不再只能操作指定数据库|
+|backup|3.4新特性，提供备份数据所需的最小权限。该角色有足够的权限使用MongoDB Cloud Manager、Ops Manager的备用代理或者使用mongodump|
+|restore|3.6新特性，提供对非系统集合的转换。提供从备份中恢复数据所需的特权，这些备份不会对数据进行重新配置。当还原数据时，此角色足够|
+|root|提供对所有资源的访问权限。集合了readWriteAnyDatabase、dbAdminAnyDatabase、userAdminAnyDatabase、clusterAdmin、backup这些角色的所有权限。|
+|__system|mongodb将此角色分配给表示集群成员的用户对象，该角色赋予其持有者对数据库中的任何对象采取任何操作。请将此角色用于代表应用程序或管理员的用户对象，而不是在异常情况下。|
+
+我们创建完一个用户后，可以使用show users或者使用db.getUser(username),db.getUsers()来查看当前数据库的所有用户。如图，我们可以看到我们在设置角色是，
+若未指定数据库，则其默认当前数据库
