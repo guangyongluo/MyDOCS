@@ -18,6 +18,21 @@ RabbitMQ整体上是一个生产者与消费者模型，主要负责接收、存
 相当于包裹的目的地，当填写在包裹上的地址和实际想要投递的地址相匹配时，那么这个包裹就会被正确投递到目的地，最后这个目的地的“主人”————队列可以保留这个
 包裹。
 
+###### AMQP协议
+AMQP 协议中的基本概念：
+* Broker: 接收和分发消息的应用，我们在介绍消息中间件的时候所说的消息系统就是Message Broker。
+* Virtual host: 出于多租户和安全因素设计的，把AMQP的基本组件划分到一个虚拟的分组中，类似于网络中的namespace概念。当多个不同的用户使用同一个
+RabbitMQ server提供的服务时，可以划分出多个vhost，每个用户在自己的vhost创建exchange／queue等。
+* Connection: publisher／consumer和broker之间的TCP连接。断开连接的操作只会在client端进行，Broker不会断开连接，除非出现网络故障或broker服务出现
+问题。
+* Channel: 如果每一次访问RabbitMQ都建立一个Connection，在消息量大的时候建立TCP Connection的开销将是巨大的，效率也较低。Channel是在connection内部
+建立的逻辑连接，如果应用程序支持多线程，通常每个thread创建单独的channel进行通讯，AMQP method包含了channel id帮助客户端和message broker识别
+channel，所以channel之间是完全隔离的。Channel作为轻量级的Connection极大减少了操作系统建立TCP connection的开销。
+* Exchange: message到达broker的第一站，根据分发规则，匹配查询表中的routing key，分发消息到queue中去。常用的类型有：direct (point-to-point), 
+topic (publish-subscribe) and fanout (multicast)。
+* Queue: 消息最终被送到这里等待consumer取走。一个message可以被同时拷贝到多个queue中。
+* Binding: exchange和queue之间的虚拟连接，binding中可以包含routing key。Binding信息被保存到exchange中的查询表中，用于message的分发依据。
+
 ###### 交换器类型
 RabbitMQ常用的交换器类型有fanout、direct、topic和headers这四种。AMQP协议里提到两个类型：System和自定义，一般不用，下面对这四种类型进行一一描述：
 1. fanout：它会把所有发送到该交换器的消息路由到所有与该交换器绑定的队列中；
@@ -34,3 +49,51 @@ RabbitMQ中无论是生产者还是消费者都需要和RabbitMQ Broker建立连
 。为什么我们需要一个虚拟信道的概念，试想一下，一个应用程序中很多个线程需要从RabbitMQ中消费消息，或者生产消息，那么必然需要建立很多个connection，也
 就是许多个TCP连接。然而对操作系统而言，建立和销毁TCP连接时非常大的开销，如果遇到使用高峰，性能压力非常大。RabbitMQ采用类似NIO(Non-Blocking IO)的
 做法，选择TCP连接复用，不仅可以减少开销而且便于管理。
+
+###### RabbitMQ安装
+1. 第一步：因为RabbitMQ是使用erlang开发的，所以安装RabbitMQ前需要安装erlang语言包，添加erlang安装源，在centOS7上安装最新版
+```
+# In /etc/yum.repos.d/rabbitmq_erlang.repo
+[rabbitmq_erlang]
+name=rabbitmq_erlang
+baseurl=https://packagecloud.io/rabbitmq/erlang/el/7/$basearch
+repo_gpgcheck=1
+gpgcheck=1
+enabled=1
+# PackageCloud's repository key and RabbitMQ package signing key
+gpgkey=https://packagecloud.io/rabbitmq/erlang/gpgkey
+       https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+metadata_expire=300
+
+[rabbitmq_erlang-source]
+name=rabbitmq_erlang-source
+baseurl=https://packagecloud.io/rabbitmq/erlang/el/7/SRPMS
+repo_gpgcheck=1
+gpgcheck=0
+enabled=1
+# PackageCloud's repository key and RabbitMQ package signing key
+gpgkey=https://packagecloud.io/rabbitmq/erlang/gpgkey
+       https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+metadata_expire=300
+```
+安装命令：`yum install erlang`
+2. 第二步：安装RabiitMQ.添加RabbitMQ安装源
+```
+[bintray-rabbitmq-server]
+name=bintray-rabbitmq-rpm
+baseurl=https://dl.bintray.com/rabbitmq/rpm/rabbitmq-server/v3.8.x/el/7/
+gpgcheck=0
+repo_gpgcheck=0
+enabled=1
+```
+安装命令：
+```
+#导入公共数据签名
+rpm --import https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
+#安装RabbitMQ server
+yum install rabbitmq-server.noarch
+```
