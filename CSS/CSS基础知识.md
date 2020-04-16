@@ -80,3 +80,30 @@ p {
 16. word-wrap标签：让过长的英文单词断开；
 17. text-indent标签：设置文本首行的缩进。
 
+###### CSS盒模型
+1. CSS盒模型中最基础的就是设置一个元素的尺寸大小。有三组样式来配置一个元素的尺寸大小属性width设置元素的宽度，height设置元素的高度，
+min-width设置元素最小宽度，min-height设置元素最小高度，max-width设置元素最大宽度，max-height设置元素最大高度；
+2. CSS盒模型中可以设置元素内部边缘填充空白的大小，我们称为内边距(padding)。内边距计入元素的大小；
+3. CSS 盒模型中可以设置元素外部边缘填充空白的大小，我们成为外边距(margin)；
+4. 当设置了元素固定尺寸且内容过大时，就会出现溢出的问题。溢出主要朝两个方向：右侧和底部。我们可以通过overflow系列样式来控制它;
+5. 使用visibility属性可以实现元素的可见性，这种样式一般可以配合JavaScript来实现效果，如果设置为hidden元素不可见，但会占据空间;
+6. CSS盒模型中的display属性，可以更改元素本身盒类型。主要有：1.块级元素(区块)；2.行内元素(内联)；3 行内-块级元素(内联块)；4.隐
+藏元素。
+7. CSS盒模型有一种叫浮动盒，就是通过float属性建立盒子的浮动方向，属性left浮动元素靠左，right浮动元素靠右，none禁用浮动；clear属性
+none允许两边均可浮动，left左边界不得浮动，right右边界不得浮动，both两边都不得浮动；
+
+###### CSS边框与背景
+1. 声明边框有三个属性设置border-width设置边框的宽度，border-style设置边框的样式，border-color设置边框的颜色，边框会计入元素大小；
+2. 边框的样式主要有三种，分别是边框长度取值、边框的颜色和边框的线条类型。颜色是通用的颜色代码，和所有其他颜色取值一下。而长度和线条类型，
+边框有自己独到的部分；
+3. CSS3提供了一个非常实用的圆角边框的设置。使用border-radius属性，就可以达到这种效果；
+4. background-color：设置背景颜色为指定色，默认值为 transparent，为透明的意思。这样`<div>`内部的元素就会继承`<div>`的背景色；
+5. background-image：url 里面是图片的路径，设置整个页面以这个图片为背景，如果图片不足以覆盖，则复制扩展。
+6. background-repeat：设置背景图片平铺；
+7. background-position：设置背景图片的位置；
+8. background-size：设置背景图片的尺寸大小；
+9. background-attachment：设置背景图片是否一起滚动；
+10. background-origin：设置背景起始位置；
+11. background-clip：在内边距盒子内部裁剪背景；
+12. 完整的简写法：background： [background-color] [background-image] [background-repeat] [background-attachment]
+[background-position]/[ background-size] [background-origin] [background-clip]；
