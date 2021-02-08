@@ -121,3 +121,43 @@ user1 = rw
 /opt/apache/bin/apachectl stop
 /opt/apache/bin/apachectl restart
 ```
+
+##### SVN的备份机制
+1. svnadmin hotcopy: 此方法只能进行全量备份，不能进行增量备份，优点是备份较快，灾难恢复也很快，如果备份机
+上已经搭建了SVN服务，只需要一些简单的配置即可切换到备机上。缺点是备份时间比较长，耗费的备份硬盘空间比较大。备
+份命令为：
+`svnadmin hotcopy 目标SVN版本库路径 热拷贝版本库路径`
+这个命令会制作一个版本库的完整热拷贝，包括所有的钩子、配置文件，当然还有数据库文件。
+
+2. svnadmin dump: 该方法为subversion官网推荐方式，优点是比较灵活，既可以进行全量备份又可以进行增量备份，
+并提供了版本恢复机制。缺点是如果版本库过大，如版本数增加到数万、数十万条时，则dump的过程很慢，备份耗时，恢复时
+更耗时，不利于块速进行灾难恢复，此方法建议在版本库较小的情况下采用。
+* 全量备份： `svnadmin dump 版本库路径 > 备份版本库存放的路径`
+* 增量备份： `svnadmin dump -r 上次备份的版本号：到本次备份到的版本号 --incremental > 导出的版本库存放路径`
+
+3. svnsync方式备份: svnsync是Subversion的一个远程版本库镜像工具，它允许把一个版本库的内容录入到另一个。
+在任何镜像场景中，有两个版本库：源版本库，镜像(或“sink”)版本库。源版本库就是svnsync获取修订版本的库，镜像
+版本库就是源版本库修订版本的目标，两个版本库可以是在本地或远程，它们只是通过URL跟踪。此方法同样只能进行全量
+备份，它实际上是制作了两个镜像库，当一个坏了的时候可以迅速切换到另一个，它必须是1.4版本以上才支持此功能。优点是
+当制作成两个镜像库的时候可以起到双机实时备份的作用。
+
+##### SVN镜像库的配置过程
+1. 增加主备版本库配置文件，新建master版本库`svnadmin create master`。在主机~/repo/bbip/hooks/目录下
+增加配置文件`cp pre-revprop-change.templ pre-revprop-change`，添加配置文件运行权限
+`chmod a+x pre-revprop-change`。修改pre-revprop-change 文件内容：将最后一行内容修改为`exit 0`。
+
+2. 主备版本库同步初始化：`svnsync init svn://备份版本库地址/master/ svn://主版本库地址/master/`
+3. 主备版本库同步：`svnsync sync svn://备份版本库地址/master/`
+4. 自动同步配置：在主版本库工程hooks目录下增加配置文件实现自动同步`cp post-commit.templ post-commit`
+修改post-commit文件，增加
+```
+export LANG="en_US.UTF-8"
+( /usr/local/subversion/bin/svnsync sync svn://备份版本库地址/master --source-username 主库用户名 --source-password 主库用户密码  --sync-username 目标库用户名  --sync-password 目标库用户密码  --no-auth-cache & ) 
+exit 0
+```
+将以前文件里的三行注销：
+```
+#REPOS="$1"
+#REV="$2"
+#mailer.py commit "$REPOS" "$REV" /path/to/mailer.conf
+```
