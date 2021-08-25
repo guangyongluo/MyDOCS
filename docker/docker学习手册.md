@@ -77,15 +77,29 @@ Docker提供了volume子命令来管理数据卷，docker volume create | inspec
 
 ##### 4. Docker端口映射与容器互联
 Docker除了通过网络访问外，还提供了两个很方便的功能来满足服务器访问的基本需求：一个是允许映射容器内应用的服务端口到本地宿主主机；另一个是互联网实现多个容器间通过容器名来快速访问。当容器中运行一些网络应用，要让外部访问这些应用时，可以通过-P或-p参数来指定端口映射。当使用-P标记时，Docker会随机映射一个49000~49900的端口到内部容器开放的网络端口，可以使用docker ps看到。  
-容器互联(linking)是一种让多个容器中的应用进行快速交互的方式。它会在源和接收容器之间创建连接关系，接收容器可以通过容器名快速访问到源容器，而不用指定具体的IP地址。首先，需要使用--name参数来自定义一个容器的名称，这样做即可以帮助记忆容器的用途还可以在容器重启后IP地址发生变化也可以使用自定义名字访问容器。**在执行docker [container] run的时候如果添加--rm标记，则容器在终止后会立刻删除。
+容器互联(linking)是一种让多个容器中的应用进行快速交互的方式。它会在源和接收容器之间创建连接关系，接收容器可以通过容器名快速访问到源容器，而不用指定具体的IP地址。首先，需要使用--name参数来自定义一个容器的名称，这样做即可以帮助记忆容器的用途还可以在容器重启后IP地址发生变化也可以使用自定义名字访问容器。**在执行docker [container] run的时候如果添加--rm标记，则容器在终止后会立刻删除**。
 
 ##### 5. Dockerfile指令说明
-* ARG <name>[=<default value>] #定义创建镜像过程中使用的变量，当镜像编译成功后，ARG指定的变量将不再存在；
-* FROM <image>:<tag> [AS <name>] #指定所创建镜像的基础镜像；
-* LABEL <key>=<value> <key>=<value> #为生成的镜像添加元数据标签信息；
-* EXPOSE <port> <port> #声明镜像内服务监听的端口，注意该指令只是起声明作用，并不会自动完成端口映射；
-* ENV <key>=<value> #指定环境变量，在镜像生成过程中会被后续RUN指令使用；
-
+* ARG `<name>[=<default value>]` #定义创建镜像过程中使用的变量，当镜像编译成功后，ARG指定的变量将不再存在；
+* FROM `<image>:<tag> [AS <name>]` #指定所创建镜像的基础镜像；
+* LABEL `<key>=<value> <key>=<value>` #为生成的镜像添加元数据标签信息；
+* EXPOSE `<port> <port>` #声明镜像内服务监听的端口，注意该指令只是起声明作用，并不会自动完成端口映射；
+* ENV `<key>=<value>` #指定环境变量，在镜像生成过程中会被后续RUN指令使用；
+* ENTRYPOINT ["executable", "param1", "param2"] #指定镜像默认入口命令，该入口命令会在启动容器时作为根命令执行，此时，CMD指令指定值将作为根命令的参数；
+* VOLUME #创建一个数据卷挂载点；
+* USER daemon #指定运行容器时的用户名或UID，后续的RUN等指令也会使用指定的用户身份；
+* WORKDIR /path/to/workdir #为后续的RUN、CMD、ENTRYPOINT指令配置工作目录；
+* ONBUILD [INSTRUCTION] #指定当基于所生成镜像创建子镜像时，自动执行的操作指令；
+* STOPSIGNAL signal #指定所创建镜像启动的容器接受退出的信号值；
+* HEALTHCHECK [OPTIONS] CMD command #根据所执行命令返回值是否为0来判断；OPTION支持如下参数：
+    -interval=DURATION : 过多久检查一次；
+    -timeout=DURATION : 每次检查等待结果的超时；
+    -retries=N : 如果失败了，重试几次才能最终确定失败；
+* SHELL #指定其他命令使用shell时的默认shell类型
+* RUN ["executable", "param1", "param2"] #每条RUN指令将在当前镜像基础上执行指定命令，并提交为新的镜像层。
+* CMD ["executable", "param1", "param2"] #CMD指令用来指定启动容器时默认执行的命令。 CMD ["param1", "param2"]提供给ENTRYPOINT的默认参数。
+* ADD [src] [dest] #该命令复制指定的src路径下内容到容器中的dest路劲下，其中src可以是Dockerfile所在目录的一个相对路径；也可以是一个URL；还可以是一个tar文件(自动解压为目录)，dest可以是镜像内绝对路径，或者相对于工作目录(WORKDIR)的相对路径。路劲支持正则格式。
+* COPY [src] [dest] #复制内容到镜像。复制本地主机的src(为Dockerfile所在目录的相对路径，文件或目录)下内容到镜像中的dest。目标路径不存在时，会自动创建。
 
 ```
 docker run -d --name elasticsearch_6.8.18 -p 9200:9200 -p 9300:9300 -v elasticsearch_6.8.18_data:/usr/share/elasticsearch/data -v elasticsearch_6.8.18_config:/usr/share/elasticsearch/config -v elasticsearch_6.8.18_plugins:/usr/share/elasticsearch/plugins elasticsearch:6.8.18
