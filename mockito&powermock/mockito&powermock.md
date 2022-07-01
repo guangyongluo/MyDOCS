@@ -86,4 +86,43 @@ Hamcrest提供了一个Matcher工具集合核心类(org.hamcrest.CoreMatchers)�
 
 ##### ArgumentCaptor
 
-一个ArgumentCaptor对象用来验证传递给mock方法的参数，想象一个场景当我们传递了一个对象给一个mock方法，这个方法对这个对象里面的属性做了一下修改，但是我们没有返回这个对象，我们怎么验证这个对象属性的修改呢？这时我们就需要ArgumentCaptor对象来捕获传递给mock方法的参数，并且验证这个对象的属性改变。
+一个ArgumentCaptor对象用来验证传递给mock方法的参数，想象一个场景当我们传递了一个对象给一个mock方法，我们想捕获我们传给mock对象的方法的参数，可以使用ArgumentCaptor。
+
+##### @InjectMocks
+
+当mock的对象存在依赖关系时，可以使用@InjectMocks注解来注入依赖对象，注入的规则是:
+1. 当存在构造函数时，使用包含属性最多的构造函数来注入依赖；
+2. 当没有构造函数，存在setter方法时，使用setter方法来注入依赖；
+3. 当以上两个都没有时，Mockito将尝试使用field注入来自动注入相关依赖对象。
+
+##### PowerMock
+
+为什么我们学习了Mockito之后还要学习PowerMock?你可以把PowerMock当成Mockito的一个扩展，但在某些UT场景下，Mockito是无法胜任的，比如局部变量，私有方法等。Mockito似乎有有一些解决方案，但是不是很优雅，所有我们在特定的测试需求下还是使用PowerMock比较合适。当然Mockito对Junit的扩展已经适应了绝大多数需要Mock的场景。
+
+##### 使用PowerMock Mock一个局部变量
+
+当一个外部引用是使用new方法生成的一个局部变量我们需要使用PowerMock来注入方法体内，步骤如下：
+
+1. 需要使用@RunWith(PowerMockRunner.class): 使用Junit@RunWith启动测试组件运行器；
+2. 需要使用PowerMock的注解@PrepareForTest({class object数组}): 将需要注入的类放入注解中，这样PowerMock会使用CGlib将修改局部变量的字节码，完成局部变量注入；
+3. 需要针对注入对象new方法的stubbing例如:```whenNew(PersonDao.class).withNoArguments().thenReturn(personDao);```。
+
+
+##### 使用PowerMock Mock静态方法
+
+1. 需要使用@RunWith(PowerMockRunner.class): 使用Junit@RunWith启动测试组件运行器；
+2. 需要使用PowerMock的注解@PrepareForTest({class object数组}): 将需要mock静态方法的类放入注解数组；
+3. 使用PowerMock mock一个包含静态方法的类例如:```mockStatic(PersonDao.class);```。
+
+##### 使用PowerMock Mock一个静态类
+
+1. 需要使用@RunWith(PowerMockRunner.class): 使用Junit@RunWith启动测试组件运行器；
+2. 需要使用PowerMock的注解@PrepareForTest({class object数组}): 将需要mock静态类放入注解数组；
+3. 使用PowerMock mock一个静态类例如：```PeopleDao peopleDao = PowerMockito.mock(PeopleDao.class);```。
+
+
+##### 使用PowerMock Mock一个私有方法
+
+1. 需要使用@RunWith(PowerMockRunner.class): 使用Junit@RunWith启动测试组件运行器；
+2. 需要使用PowerMock的注解@PrepareForTest({class object数组}): 将需要mock静态类放入注解数组；
+3. 
