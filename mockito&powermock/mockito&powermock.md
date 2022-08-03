@@ -81,8 +81,9 @@ Hamcrest提供了一个Matcher工具集合核心类(org.hamcrest.CoreMatchers)�
 2. verify(mockObject, atLeastOnce(number)).method(parameter): 验证mock对象的方法最少调用一次；
 3. verify(mockObject, atLeast(number)).method(parameter): 验证mock对象的方法最少调用的次数；
 4. verify(mockObject, atMost(number)).method(parameter): 验证mock对象的方法最多调用的次数；
-5. verify(mockObject, only(number)).method(parameter): 验证mock对象的所有方法有且只调用一次；
-6. verifyNoMoreInteractions(mockObject): 验证mock对象之前多有调用的方法都已经被verify验证了；
+5. verify(mockObject, only(number)).method(parameter): 验证mock对象的所有方法有且只调用一次,同时不能调用其他的任何方法；
+6. verifyNoMoreInteractions(mockObject): 验证在verifyNoMoreInteractions之前对mock对象的所有调用的方法都已经被verify验证了；
+7. verifyZeroInteractions(mockObject): 验证在@Test方法之前如@Before方法或者构造方法所有调用的方法都已经被verify验证了.
 
 ##### ArgumentCaptor
 
@@ -124,5 +125,4 @@ Hamcrest提供了一个Matcher工具集合核心类(org.hamcrest.CoreMatchers)�
 ##### 使用PowerMock Mock一个私有方法
 
 1. 需要使用@RunWith(PowerMockRunner.class): 使用Junit@RunWith启动测试组件运行器；
-2. 需要使用PowerMock的注解@PrepareForTest({class object数组}): 将需要mock静态类放入注解数组；
-3. 
+2. 需要使用PowerMock的注解@PrepareForTest({class object数组}): 将需要mock静态类放入注解数组； 
