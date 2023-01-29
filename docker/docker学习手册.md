@@ -9,11 +9,15 @@ stty -echo -icanon && nc -U ~/Library/Containers/com.docker.docker/Data/debug-sh
 
 2. window中的Docker Engine安装在一个wsl的Linux子系统中，可以在文件浏览器中输入`\\$wsl`查看，其中有两个linux子系统一个是docker-desktop，Windows的Docker Engine就安装在这个linux子系统中，另一个子系统是docker-desktop-data，docker中的镜像、volumes都是存储这个子系统中。可以使用wsl的命令进入docker-desktop但其实里面没什么，我想这个子系统提供了docker运行的系统内核吧。
 
+##### 2. Docker三大核心概念
+* Docker镜像类似于虚拟机镜像，可以将它理解为一个只读的模板。一个镜像可以包含一个基本的操作系统环境，同时可以安装用户需要的其他软件。
+* Docker容器类似于一个轻量级的沙箱，Docker利用容器来运行和隔离应用。容器是从镜像创建的应用运行实例。它可以启动、开始、停止、删除，而这些容器都是彼此相互隔离、互相不可见的。
+* Docker仓库类似于代码仓库，是Docker集中存放镜像文件的场所。有时候我们会将Docker仓库和仓库注册服务器(Registry)混为一谈，并不严谨区分。实际上，仓库注册服务器是存放仓库的地方，其上往往存放着多个仓库。每个仓库集中存放某一类镜像，往往包含多个镜像文件，通过不同的标签(tag)来进行区分。
+
 ##### 2. docker的基本命令
 ```
 docker [image] pull NAME[:TAG] #pull命令直接从Docker Hub镜像源来下载镜像
-docker images #列出本地镜像
-docker [image] inspect #inspect命令查看详细信息
+docker images #列出本地镜像docker [image] inspect #inspect命令查看详细信息
 docker history #查看镜像历史信息
 docker image rm #使用标签或ID删除镜像
 docker image prune #使用Docker一段时间后，系统中可能会遗留一些临时镜像文件，以及一些没有被使用的镜像，prune命令可以进行清理
@@ -80,26 +84,46 @@ Docker除了通过网络访问外，还提供了两个很方便的功能来满�
 容器互联(linking)是一种让多个容器中的应用进行快速交互的方式。它会在源和接收容器之间创建连接关系，接收容器可以通过容器名快速访问到源容器，而不用指定具体的IP地址。首先，需要使用--name参数来自定义一个容器的名称，这样做即可以帮助记忆容器的用途还可以在容器重启后IP地址发生变化也可以使用自定义名字访问容器。**在执行docker [container] run的时候如果添加--rm标记，则容器在终止后会立刻删除**。
 
 ##### 5. Dockerfile指令说明
-* ARG `<name>[=<default value>]` #定义创建镜像过程中使用的变量，当镜像编译成功后，ARG指定的变量将不再存在；
-* FROM `<image>:<tag> [AS <name>]` #指定所创建镜像的基础镜像；
-* LABEL `<key>=<value> <key>=<value>` #为生成的镜像添加元数据标签信息；
-* EXPOSE `<port> <port>` #声明镜像内服务监听的端口，注意该指令只是起声明作用，并不会自动完成端口映射；
-* ENV `<key>=<value>` #指定环境变量，在镜像生成过程中会被后续RUN指令使用；
-* ENTRYPOINT ["executable", "param1", "param2"] #指定镜像默认入口命令，该入口命令会在启动容器时作为根命令执行，此时，CMD指令指定值将作为根命令的参数；
-* VOLUME #创建一个数据卷挂载点；
-* USER daemon #指定运行容器时的用户名或UID，后续的RUN等指令也会使用指定的用户身份；
-* WORKDIR /path/to/workdir #为后续的RUN、CMD、ENTRYPOINT指令配置工作目录；
-* ONBUILD [INSTRUCTION] #指定当基于所生成镜像创建子镜像时，自动执行的操作指令；
-* STOPSIGNAL signal #指定所创建镜像启动的容器接受退出的信号值；
+* ARG `<name>[=<default value>]` 定义创建镜像过程中使用的变量，当镜像编译成功后，ARG指定的变量将不再存在(ENV指定的变量将在镜像中保留)；
+* FROM `<image>:<tag> [AS <name>]` 指定所创建镜像的基础镜像，任何Dockerfile中第一条指令必须为FROM指令；
+* LABEL `<key>=<value> <key>=<value>` 为生成的镜像添加元数据标签信息。这些信息可以用来辅助过滤出特定镜像；
+* EXPOSE `<port> <port>` 声明镜像内服务监听的端口，注意该指令只是起声明作用，并不会自动完成端口映射；
+* ENV `<key>=<value>` 指定环境变量，在镜像生成过程中会被后续RUN指令使用，在镜像启动的容器中也会存在；
+* ENTRYPOINT指定镜像默认入口命令，该入口命令会在启动容器时作为根命令执行，此时，CMD指令指定值将作为根命令的参数。支持两种格式：
+    1. ENTRYPOINT ["executable", "param1", "param2"]: exec调用执行；
+    2. ENTRYPOINT command param1 param2: shell中执行。
+    此时，CMD指令指定值将作为根命令的参数。每个Dockerfile中只能有一个ENTRYPOINT，当指定多个时，只有最后一个起效。
+* VOLUME 创建一个数据卷挂载点；
+* USER daemon 指定运行容器时的用户名或UID，后续的RUN等指令也会使用指定的用户身份；
+* WORKDIR `/path/to/workdir` 为后续的RUN、CMD、ENTRYPOINT指令配置工作目录，为了避免出错，推荐WORKDIR指令中只使用绝对路径；
+* ONBUILD [INSTRUCTION] 指定当基于所生成镜像创建子镜像时，自动执行的操作指令；
+* STOPSIGNAL signal 指定所创建镜像启动的容器接受退出的信号值；
 * HEALTHCHECK [OPTIONS] CMD command #根据所执行命令返回值是否为0来判断；OPTION支持如下参数：
     -interval=DURATION : 过多久检查一次；
     -timeout=DURATION : 每次检查等待结果的超时；
     -retries=N : 如果失败了，重试几次才能最终确定失败；
 * SHELL #指定其他命令使用shell时的默认shell类型
-* RUN ["executable", "param1", "param2"] #每条RUN指令将在当前镜像基础上执行指定命令，并提交为新的镜像层。
-* CMD ["executable", "param1", "param2"] #CMD指令用来指定启动容器时默认执行的命令。 CMD ["param1", "param2"]提供给ENTRYPOINT的默认参数。
-* ADD [src] [dest] #该命令复制指定的src路径下内容到容器中的dest路劲下，其中src可以是Dockerfile所在目录的一个相对路径；也可以是一个URL；还可以是一个tar文件(自动解压为目录)，dest可以是镜像内绝对路径，或者相对于工作目录(WORKDIR)的相对路径。路劲支持正则格式。
-* COPY [src] [dest] #复制内容到镜像。复制本地主机的src(为Dockerfile所在目录的相对路径，文件或目录)下内容到镜像中的dest。目标路径不存在时，会自动创建。
+* RUN 每条RUN指令将在当前镜像基础上执行指定命令，并提交为新的镜像层。当命令较长时可以使用\来换行，支持两种格式：
+    1. RUN `<command>`: 在shell终端中运行命令，即`/bin/sh -c`；
+    2. RUN ["executable", "param1", "param2"]: 使用exec执行，不会启动shell环境；
+* CMD ["executable", "param1", "param2"] #CMD指令用来指定启动容器时默认执行的命令。每个Dockerfile只能有一条CMD命令。如果指定了多条命令，只有最后一条会被执行。如果用户启动容器时候手动指定了运行的命令(作为run命令的参数)，则会覆盖掉CMD指定的命令。支持三种格式：
+    1. CMD ["executable", "param1", "param2"]: 相当于执行executable param1 param2,这种方式是推荐的方式；
+    2. CMD command param1 param2: 在默认的shell中执行，提供给需要交互的应用；
+    3. CMD ["param1", "param2"]提供给ENTRYPOINT的默认参数。
+* ADD [src] [dest] #该命令复制指定的src路径下内容到容器中的dest路劲下，其中src可以是Dockerfile所在目录的一个相对路径；也可以是一个URL；还可以是一个tar文件(自动解压为目录)，dest可以是镜像内绝对路径，或者相对于工作目录(WORKDIR)的相对路径。路径支持正则格式。
+* COPY [src] [dest] #复制内容到镜像。复制本地主机的src(为Dockerfile所在目录的相对路径，文件或目录)下内容到镜像中的dest。目标路径不存在时，会自动创建。COPY与ADD指令功能类似，当使用本地目录为源目录时，推荐使用COPY。
+
+##### 6.创建镜像
+编写完成Dockerfile之后，可以通过docker [image] build命令来创建镜像。基本的格式为docker build [OPTIONS] PATH | URL | -。该命令将读取指定路径下(包括子目录)的Dockerfile，并将该路径下所有数据作为上下文(Context)发送给Docker服务器。Docker服务器在校验Dockerfile格式通过后，逐条执行其中定义的指令，碰到ADD、COPY和RUN指令会生成一层新的镜像。最终如果创建镜像成功，会返回最终镜像的ID。如果上下文过大，会导致发送大量数据给服务端，延缓创建过程。因此除非是生成镜像所必须的文件，不然不要放在上下文路径下。如果使用非上下文路径下的Dockerfile，可以通过-f选项来指定其路径。要指定生成镜像的标签信息，可以通过-t选项。该选项可以重复使用多次为镜像一次添加多个名称。
+
+创建镜像的最佳实践
+* 精简镜像用途：尽量让每个镜像的用途都比较单一，避免照成大而复杂、多功能的镜像；
+* 选用合适的基础镜像：容器的核心是应用。选择过大的父镜像(如：Ubuntu系统镜像)会造成最终生成应用镜像的臃肿，推荐选用瘦过身的应用镜像(如：node:slim)，或者较为小巧的系统镜像；
+* 提供注释和维护者信息：Dockerfile也是一种代码，需要考虑方便后续的扩展和他人的使用；
+* 正确使用版本号：使用明确的版本号信息，如1.0, 2.0，而非依赖于默认的latest;
+* 减少镜像层数：如果希望所生成镜像的层数尽量少，则要尽量合并RUN、ADD和COPY指令。通常情况下，多个RUN指令可以合并为一条RUN指令；
+* 恰当使用多步创建：通过多步骤创建，可以将编译和运行等过程分开，保证最终生成的镜像只包含运行应用所需要的最小化环境。当然，用户也可以通过分别构造编译镜像和运行镜像来达到类似的结果，但这种方式需要维护多个Dockerfile；
+* 
 
 ```
 docker run -d --name elasticsearch_6.8.18 -p 9200:9200 -p 9300:9300 -v elasticsearch_6.8.18_data:/usr/share/elasticsearch/data -v elasticsearch_6.8.18_config:/usr/share/elasticsearch/config -v elasticsearch_6.8.18_plugins:/usr/share/elasticsearch/plugins elasticsearch:6.8.18
