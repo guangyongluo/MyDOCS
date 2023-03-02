@@ -1,4 +1,4 @@
-### Kinesis Date Stream 学习手册
+### Kinesis 学习手册
 
 ##### 1. Kinesis Date Stream 是什么？
 
@@ -66,17 +66,35 @@ KCL 可以用来消费和处理`Kinesis Date Stream`中的数据记录，并提�
 lease table 将是全局唯一的 DynamoDB 表，一般使用应用程序名来命名。当应用程序启动后，由一个 worker 来创建这个表，表中的每行记录代表着一个被 worker 处理的 shard 信息。表结构定义如下：
 
 - checkpoint: 最近的游标指向位置的序列号，这个值是每个`Kinesis Date Stream`唯一的。
-- checkpointSubSequanceNumber: 当我们开启了KCL的聚合和收集功能时，将使用subsequancenumber来扩张sequance number来追踪包含在数据记录中的每个user records。
-- leaseCounter: lease的版本记录，worker可以判断他们的lease是否被其他worker占用。
-- leaseKey: lease表中的唯一标识，相当于主键的概念。
-- leaseOwner: worker信息。
-- ownerSwitcherSinceCheckpoint: 自从上次游标被设置后lease被多少个worker处理过。
-- parentShardId: 确保子shard开始处理前父shard被完全处理。这样可以确保按需消费数据记录。
-- hashrange: PeriodicShardSyncManager用来介个时间创建缺失的lease信息。
-- childshards： LeaseCleanupManager用来判断是否可以删除父shard的租约信息。
-- shardID: 分区ID。
+- checkpointSubSequanceNumber: 当我们开启了 KCL 的聚合和收集功能时，将使用 subsequancenumber 来扩张 sequance number 来追踪包含在数据记录中的每个 user records。
+- leaseCounter: lease 的版本记录，worker 可以判断他们的 lease 是否被其他 worker 占用。
+- leaseKey: lease 表中的唯一标识，相当于主键的概念。
+- leaseOwner: worker 信息。
+- ownerSwitcherSinceCheckpoint: 自从上次游标被设置后 lease 被多少个 worker 处理过。
+- parentShardId: 确保子 shard 开始处理前父 shard 被完全处理。这样可以确保按需消费数据记录。
+- hashrange: PeriodicShardSyncManager 用来介个时间创建缺失的 lease 信息。
+- childshards： LeaseCleanupManager 用来判断是否可以删除父 shard 的租约信息。
+- shardID: 分区 ID。
 - stream name: `Kinesis Date Stream`的唯一标识。
 
-当应用程序收到了DynamoDB的吞吐量异常时，我们需要增加预制的吞吐量，KCL创建的DynamoDB预制的吞吐量是每秒10次读和写。
+当应用程序收到了 DynamoDB 的吞吐量异常时，我们需要增加预制的吞吐量，KCL 创建的 DynamoDB 预制的吞吐量是每秒 10 次读和写。
+
+##### 6. Kinesis Video Stream 是什么？
+
+`AWS Service`管理的`Amazon Kinesis Video Stream`可以用来处理和分析实时的或者是批量的视频或音频数据。`Amazon Kinesis Video Stream`不只是存储视频或音频数据，你也可以实时的观看。`Amazon Kinesis Video Stream`的主要功能包含：
+
+- 可以连接和接收各种设备的数据，只需要使用`producer libraries`配置你的设备就可以实时或批量地上传你的数据流。
+- 可以持久化、加密和排序媒体数据，可以配置媒体数据持久化的时间，`Amazon Kinesis Video Stream`也可以加密数据，最后根据 producer 产生时间和`Amazon Kinesis Video Stream`服务端时间排序媒体数据，应用程序可以按照时间排序来获取`Amazon Kinesis Video Stream`中的数据。
+- 支持创建实时或批量处理程序，使用`Amazon Kinesis Video Stream`可以创建实时的应用程序来处理流媒体数据，或者在没有严格延迟需求下创建应用程序来批量处理流媒体数据。
+
+##### 7. Amazon Kinesis Video Stream如何工作
+
+- Producer：生产者能将流媒体数据发送到`Amazon Kinesis Video Stream`里面，例如：监控摄像头，手机摄像头，电话会议等等。`Kinesis Video Stream Producer libraries`是AWS提供的一个易用的开发包，可以安全可靠的连接到`Amazon Kinesis Video Stream`，实时或者批量的上传流媒体数据；
+- `Kinesis Video Stream`：一个可以存储、传输流媒体数据的AWS资源，支持一个生成者上传数据，多个消费者接收处理、分析数据。
+- Consumer：消费者从`Amazon Kinesis Video Stream`接收流媒体数据，支持实时或批量的处理分析流媒体数据。AWS提供了一个`Kinesis Video Stream Parser Library`开发包，应用程序可以使用开发包接收流媒体数据，低延时的处理分析数据。
+- 回放流媒体数据：可以使用HLS(HTTP Live Streaming: 一个标准的流媒体传输HTTP协议)，MPEG-DASH(Dynamic Adaptive Streaming over HTTP: 可以支持高质量的流媒体传输HTTP协议)；
+- Producer API: `Amazon Kinesis Video Stream`提供了`putMedia`API往`Amazon Kinesis Video Stream`写入媒体数据，生产者发送`media fragments`到Kinesis，一个fragment包含了一连串的数据帧。当一个fragment发送到`Amazon Kinesis Video Stream`后会被赋一个唯一的递增number，保证时间序列化，同时生产者生成的时间和服务端时间也将会被当成metadata记录下来；
+- Consumer API: 指定一个开始的fragment使用`getMedia`可以按序(fragment number)返回fragments。使用ListFragments可以指定特定的fragments然后使用`getMediaFromFragmentList`批量获取。
+- Streaming Metadata: 一个可以修改的键值对可以嵌入在fragment中用于描述fragment的内容，有两种形式的metadata，一种是临时的metadata，用于描述单个fragment，一种是持久的metadate，用于描述当前和之后的所有的fragments。
 
 
