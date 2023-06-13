@@ -58,6 +58,34 @@
 
  在`Amazon API Gateway`中一个API method包含一个method request和一个method response。你创建一个API method用于定义客户端发送请求到后端服务和定义从后端服务返回的请求响应。在请求中可以根据客户端运行时传输的数据来选择请求参数和请求体。在响应中使用后端返回的数据映射到你定义的响应状态码、响应头和响应体。
  - 一个API method request是一个HTTP request。配置method request我们需要配置一个HTTP method动词，一个API资源路径，请求头，请求参数。还可以为POST、PUT和PATCH配置请求体。
- - 一个API method response是一个HTTP response。对于non-proxy的intergration必须配置method response来指明返回和响应之间的映射关系，这将把integration response的返回头和返回体转换成method response的响应头和响应体。如果这个映射为默认将直接返回integration response的返回头和返回体。一般情况下配置method response处理2**、4**、5**三种状态码的返回，但是你无法对没有匹配上或未知的返回都定义method response，最佳的实践是定义一个默认的错误码为500的返回。为了支持强类型的请求和返回，你可以创建Model来定义请求和响应的类型。
 
+ - 一个API method response是一个HTTP response。对于non-proxy的intergration必须配置method response来指明返回和响应之间的映射对象，这将把integration response的返回头和返回体转换成method response的响应头和响应体。这个映射也可以直接返回integration response的返回头和返回体。一般情况下配置method response处理2XX、4XX、5XX三种状态码的返回，但是你无法对没有匹配上或未知的返回都定义method response，最佳的实践是定义一个默认的错误码为500的返回。为了支持校验请求和返回的请求体和响应体，你可以创建Model来定义请求和响应的body体类型。
+
+##### 4. 访问控制
+
+1. 使用`Amazon API Gateway`的资源策略：资源策略是一个JSON策略文档，你可以附加到一个API上指定特定策略来访问这个API，这样你的API可以被安全的访问了
+- 从特定的AWS账户来的请求
+- 从指定的IP地址或者CIDR块来的请求
+- 从指定的VPC或者VPC站点来的请求
+  你可以使用资源策略来控制所有类型的`Amazon API Gateway`访问请求。对于私有APIs你可以使用资源策略和VPC endpoint策略一起来控制对资源的访问。资源策略包含以下元素:
+- Resources: 你可以授权或禁止对APIs资源的访问；
+- Actions: AWS定义了对资源的一系列操作，你可以使用允许或拒绝对资源的操作，例如`execute-api:Invoke`将允许你调用API。
+- Effect: 对于该资源操作的授权，只有Allow和Deny两种；
+- Rrincipal: 账户或用户，定义对谁授权。
+
+2. 当API gateway在评估资源策略的时候结果会受到定义API时授权类型的影响：
+
+- 当API定义授权类型时选择无授权，评估资源策略时允许访问需要明确允许访问，禁止访问可以是明确或隐试的。
+
+  ![apigateway_auth_resource_policy_only](../image/apigateway_auth_resource_policy_only.png)
+
+- 当API定义授权类型时选择Lambda授权器，先评估是否有明确的拒绝策略，如果有则直接拒绝，如果没有就需要评估Lambda的执行角色策略和资源策略相结合来评估结果。
+
+  ![apigateway_auth_lambda_resource_policy](../image/apigateway_auth_lambda_resource_policy.png)
+
+- 当API定义授权类型时选择了IAM认证，将会根据IAM的认证策略和资源策略来评估是否有权访问API，如果调用者和API owener分别属于不同的账户，需要IAM认证策略和资源策略都被明确授权才能调用，如果调用者和API owener是属于同一个账户，则IAM认证策略和资源策略只需要有一个明确授权就可以调用。
+
+  ![apigateway_auth_iam_resource_policy](../image/apigateway_auth_iam_resource_policy.png)
+
+  
 
