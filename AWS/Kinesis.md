@@ -145,6 +145,18 @@ Producer库和Stream Parser库支持视频数据中嵌入信息发送和接收�
 - Kinesis Video Streams Producer Library：`Kinesis Video Streams Producer Library`这个类库被包含在Kinesis Video Streams Producer Client中，客户端也可以直接使用这个类库和Kinesis Video Streams深度集成，它支持硬件设备和适配的操作系统、网络协议栈、有限的内置资源做集成。Kinesis Video Streams Producer Library针对摄入数据到Kinesis Video Streams实现了状态机，也支持回调函数，你需要提供处理所有消息事件的实现。
 - 使用Java Producer Library：1. 创建一个KinesisVideoClient实例；2.创建一个MediaSource提供media source信息，比如摄像头的标识，使用的编码格式；3. 注册MediaSource。
 
+##### 14. Kinesis Video Stream parser Library
+
+`Kinesis video stream Parser Library`是一组Java应用程序消费Kinesis video stream中的MKV数据的类库：
+
+- StreamingMkvReader：用于从video stream中读取指定的MKV元素；
+
+- FragmentMetadataVisitor：用于获取fragments的metadata和轨道(单独的数据流包含流媒体信息例如：视频或者音轨)；
+
+- OutputSegmentMerger：用于将连续的fragments合并成一个video stream；
+
+  
+
 
 
 
