@@ -21,11 +21,11 @@ SOLID是五个面向对象的设置原则的首字母，这些设计原则建立
 ```java
 class HungrySingleton {
   
-  private final HungrySingleton hungrySingleton = new HungrySingleton();
+  private static HungrySingleton hungrySingleton = new HungrySingleton();
   
   private HungrySingleton(){}
   
-  public HungrySingleton getInstance(){
+  public static HungrySingleton getInstance(){
     return this.hungrySingleton;
   }
 }
@@ -55,6 +55,125 @@ class LazySingleton {
 }
 ```
 
+静态内部类实现的懒汉模式单例，由于静态内部类是在使用的时候由JVM来保证单次加载的，同时也是线程安全的。这里需要简单地回顾JVM类的加载过程：
 
+1. 加载二进制到内存中，生成对应的Class数据结构；
+2. 连接阶段：a.验证 b.准备(给内的静态成员变量赋初始值) c.解析
+3. 初始化：给类的静态成员赋初值
 
-- 
+只有在真正使用对应类的时候，才会初始化，当前是启动类所在的类，直接进行new操作，访问静态属性，访问静态方法，使用反射访问类文件，初始化一个类的子类等；
+
+```java
+class InnerClassSingleton {
+
+  private InnerClassSingleton(){}
+  
+  private static class SingletonHolder{
+    private static InnerClassSingleton innerClassSingleton = new InnerClassSingleton();
+  }
+  
+  public InnerClassSingleton getInstance(){
+    return SingletonHolder.innerClassSingleton;
+  }
+}
+```
+
+如果使用反射来new对象可以攻击单例的实现，如果是饿汉模式或者是静态内部类可以在构造方法中加一个判断来防止单例模式实现产生多个实例，但是如果是懒汉模式就无法防止反射的攻击。
+
+使用enum来实现单例，JVM来保证静态代码块来初始化enum的元素所以是线程安全的，同时enum类型不支持反射，而且如果使用反序列化也不需要进行特殊的处理来保证单例的实施。
+
+```java
+public enum EnumSingleton {
+  
+  INSTANCE;
+  
+  public void print(){
+    System.out.println("INSTANCE = " + this.hashCode());
+  }
+}
+```
+
+### 2. 工厂设计模式 Factory
+
+- 工厂方法模式：定义一个用于创建对象的接口，让子类决定创建哪个类，Factory Method使得一个类的实例化延迟到子类；
+- 抽象工厂模式：提供一个创建一系列相关或互相依赖对象的接口，而无需指定它们的具体类；
+
+### 3. 建造者设计模式 Builder
+
+建造者设计模式：将一个复杂对象的创建于它的表示分离，使得同样的构建过程可以创建不同的表示。通常建造者模式主要应用在需要复杂的构造过程的对象创建时，定义一个创建对象的接口，然后定义创建对象的具体实现，由Director指导对象的创建过程。大多数场景中不需要这么复杂的创建过程，一般使用一个建造者设计模式的变种类似于lombok中的builder实现。
+
+```java
+public class Product{
+  
+  private final String param1;
+  
+  private final Integer param2;
+  
+  public Product(String param1, Integer param2) {
+    this.param1 = param1;
+    this.param2 = param2;
+  }
+  
+  public static class ProductBuilder{
+    
+    private String param1;
+    
+    private Integer param2;
+    
+    public ProductBuilder param1(String param1) {
+      this.param1 = param1;
+      return this;
+    }
+    
+    public ProductBuilder param2(Integer param2) {
+      this.param2 = param2;
+      return this;
+    }
+    
+    public Product build(){
+      return new Product(this.param1, this.param2);
+    }
+    
+  }
+  
+}
+```
+
+### 4. 原型设计模式 Prototype
+
+原型设计模式：指原型实例指定创建对象的种类，并且通过拷贝这些原型创建新的对象。在JDK中使用Object.clone()方法来浅拷贝对象，需要注意的是在使用clone方法时，需要实现Clonable接口，该接口是一个标记接口，旨在JVM运行时指定是否可以运行clone()方法,，而且需要覆盖Object的clone()方法。
+
+### 5. 享元设计模式 Flyweight
+
+享元设计模式：运用共享技术有效地支持大量细粒度的对象。
+
+### 6. 门面模式 Facade
+
+门面设计模式：为子系统中的一组接口提供一致的接口，Facade模式定义了一个高层接口，这个接口使得这一子系统更加容易使用。
+
+### 7. 适配器模式 Adapter
+
+适配器设计模式：将一个类的接口转换成客户希望的另一个接口。Adapter模式使得原本由于接口不兼容而不能在一起工作的那些类可以一起工作。
+
+- 对象适配器模式
+- 类适配器模式
+
+### 8. 装饰者模式 Decorator
+
+装饰者设计模式：在不改变原有对象的基础上，将功能附加到对象上。
+
+### 9. 策略模式 Strategy
+
+策略设计模式：定义了算法族，分别封装起来，让它们之间可以相互替换，此模式的变化独立于算法的使用者。
+
+### 10. 模板模式 Template
+
+模板设计模式：定义一个算法的骨架，而将一些步骤延迟到子类中，模板设计模式可以在不改变一个算法结构的情况下，通过继承抽象类的方式来实现其中特定方法。
+
+### 11. 观察者模式 Observer
+
+观察者模式：定义了对象之间的一对多依赖，让多个观察者对象同事监听同一个主题对象，当主题对象发生变化时，它的所有观察者都会收到通知并更新。
+
+### 12. 责任链模式 Chain of Resposibility
+
+责任链模式：为请求创建了一个接受者对象的链

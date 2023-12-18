@@ -54,7 +54,7 @@ Memcache使用hash table快速定位key，在查询key时，首先使用hash算�
 
 ##### 3.2 Memcache的Item结构
 
-![memcache_item_structure](/Users/luowei/Documents/HBuilderProjects/MyDOCS/image/memcache_item_structure.png)
+![memcache_item_structure](../image/memcache_item_structure.png)
 
 Memcache中的slabclass首先用item的结构来初始化已分配的slab中的trunk，然后存到freelist链表中，待需要存储数据时，从freelist中取出存入key/value和各种属性，然后再存到LRU链表和HashTable中，如上图所示，首先有两个prev、next指针，在没有存储数据时用于关联freelist链表，在分配存储数据后则用来关联LRU链表。接下来有一个h_next指针，用来关联分配之后的hashtable单向链表。即item的初始化或被回收后被freelist管理，在存储期间被hashtable和LRU管理。
 
@@ -125,7 +125,7 @@ Redis的持久化有两种机制保证，Redis的默认持久化使用RDB(Redis 
 
 AOF(Append Only File)：将Redis执行过的所有写指令记录下来(读操作不记录)，只许追加文件但是不可以改写文件，redis启动之初会读取该文件重新构建数据，换言之，redis重启的话就根据日志文件的内容将写指令从前到后执行一次以完成数据的恢复工作，AOF默认是不开启的。Client作为命令的来源，会有多个源头以及源源不断的请求命令，在这些命令到达Redis Server以后并不是直接写入AOF文件，会将这些命令先放入AOF缓存中进行保存。这里的AOF缓冲区实际上是内存中的一片区域，存在的目的是当这些命令达到一定量以后再写入磁盘，避免频繁的磁盘IO操作。AOF缓冲会根据AOF缓冲区**同步文件的三种写回策略**将命令写入磁盘上的AOF文件。随着写入AOF内容的增加为避免文件膨胀，会根据规则进行命令的合并(**又称AOF重写**)，从而起到AOF文件压缩的目的。当Redis Server服务器重启的时候会队AOF文件载入数据。
 
-![AOF_persistence_process](/Users/luowei/Documents/HBuilderProjects/MyDOCS/image/AOF_persistence_process.jpg)
+![AOF_persistence_process](../image/AOF_persistence_process.jpg)
 
 AOF的三种写回策略：
 
@@ -191,9 +191,15 @@ Redis哨兵的运行流程和选举原理，SDOWN是单个sentinel自己主观�
 - Redis集群的槽位(slot)，Redis集群没有使用一致性hash，而是引入了哈希槽的概念，Redis集群有16384个哈希槽，每个key通过CRC16校验后对16384去模来决定放置哪个槽，集群的每个节点负责一部分hash槽。HASH_SLOT = CRC16(key) mod 16384
 - Redis集群的分片，使用Redis集群时我们会将存储的数据分散到多台redis机器上，这就称为分片。简言之，集群中的每个Redis实例都被认为是整个数据的一个分片。为了找到给定key分片，我们对key进行CRC16(key)算法处理并通过对总分片数量取模。然后，使用确定性哈希函数，这意味着给定的key将多次始终映射到同一个分片，我们可以推断将来读取特定key的位置。
 
+Redis集群的扩容和缩容，当新的节点以master加入Redis集群中，集群中的其余master节点将会分配自己的槽位给这个新的节点，这样的扩容方式不会影响之前的节点槽位，有一部分槽位将会迁移至新的节点，这种设计的思想是在客户端和Redis分片中加了一层映射层，其主要的目的就是针对扩容和缩容来对整个集群分片中各自槽位的调整。
 
+##### 4.8 Redis客户端(Java)
 
+1. Jedis: 最早Redis的Java客户端，支持全面的Redis操作特性，使用阻塞的IO，且其方法调用都是同步的，程序流需要等到sockets处理完IO才能执行，不支持异步。使用new Jedis实例来获取Redis连接，Jedis客户端实例不是线程安全的，所以需要通过连接池技术来使用Redis；
+2. Lettuce：是一种可扩展的线程安全的Redis客户端，支持异步模式。如果涉及阻塞和事务操作比如BLPOP和MULTIEXEC，多线程就可以共享一个连接。Lettuce底层基于Netty，支持高级的Redis特性，比如哨兵，集群，管道，自动重新连接和Redis数据模型。
+3. Ression：是一个在Redis的基础上实现的Java驻内存数据网格(In-Memory Data Grid)。它不仅提供了一系列的分布式的Java常用对象，还提供了许多分布式服务。
 
+### 5. Redis 高级特性
 
- 
+Redis经过多年的发展，Redis是单线程还是多线程这个问题不能简单来回答，首先在Redis 3.x之前Redis确实是单线程的，主要原因是Redis是内存数据库，主要操作都在内存中完成，不需要特别费时的磁盘IO。其实在Redis初期发展阶段，Redis的性能瓶颈不在于CPU而是主要在于内存和网络IO。Redis使用IO多路复用功能来监听多个socket连接客户端，这样就可以使用一个线程连接处理多个请求，减少线程切换带来的开销，同时也避免了IO阻塞操作。因为单线程模型，因此就避免了不必要的上下文切换和多线程竞争，这就省去了多线程切换带来的时间和性能上的消耗，而且单线程不会导致死锁问题的发生。
 
