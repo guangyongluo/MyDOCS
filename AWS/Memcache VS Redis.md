@@ -201,5 +201,81 @@ Redis集群的扩容和缩容，当新的节点以master加入Redis集群中，�
 
 ### 5. Redis 高级特性
 
-Redis经过多年的发展，Redis是单线程还是多线程这个问题不能简单来回答，首先在Redis 3.x之前Redis确实是单线程的，主要原因是Redis是内存数据库，主要操作都在内存中完成，不需要特别费时的磁盘IO。其实在Redis初期发展阶段，Redis的性能瓶颈不在于CPU而是主要在于内存和网络IO。Redis使用IO多路复用功能来监听多个socket连接客户端，这样就可以使用一个线程连接处理多个请求，减少线程切换带来的开销，同时也避免了IO阻塞操作。因为单线程模型，因此就避免了不必要的上下文切换和多线程竞争，这就省去了多线程切换带来的时间和性能上的消耗，而且单线程不会导致死锁问题的发生。
+Redis经过多年的发展，Redis是单线程还是多线程这个问题不能简单来回答，首先在Redis 3.x之前Redis确实是单线程的，主要原因是Redis是内存数据库，主要操作都在内存中完成，不需要特别费时的磁盘IO。其实在Redis初期发展阶段，Redis的性能瓶颈不在于CPU而是主要在于内存和网络IO。Redis使用IO多路复用功能来监听多个socket连接客户端，这样就可以使用一个线程连接处理多个请求，减少线程切换带来的开销，同时也避免了IO阻塞操作。因为单线程模型，因此就避免了不必要的上下文切换和多线程竞争，这就省去了多线程切换带来的时间和性能上的消耗，而且单线程不会导致死锁问题的发生。而且Redis的数据结构设计都很简单，大部分操作的时间复杂度都是O(1)，所以性能非常快。
 
+Redis的单线程主要还是指的接受socket请求，解析socket数据，执行Redis命令，回写Socket结果这一系列的对外提供Redis主流程服务的处理是单线程的，简单理解就是Redis的网络IO和键值操作是单线程完成的。但是随着硬件的不断升级，多核CPU已经普及，对于单线程处理的痛点，大Key删除阻塞问题，从Redis 4.x开始使用多线程来异步处理一些耗时的工作，比如RDB快照，AOF文件，集群数据同步，异步删除等都是由额外的线程来单独处理。
+
+在Redis 6/7开始就支持多线了，由于网络IO逐渐成为了Redis的性能瓶颈，Redis从6开始采用多个IO线程来处理网络请求，提高网络请求的处理速度，对于读写请求则继续使用单线程来处理，这样就可以不用使用额外的锁来保证Redis操作的原子性，线程模型相对简单。
+
+##### 5.1 Redis 7启动多线程IO
+
+默认Redis是不开启IO多线程，如果需要开启IO多线程需要修改配置文件，Redis 7 conf文件说明如下：
+
+```
+# So for instance if you have a four cores boxes, try to use 2 or 3 I/O
+# threads, if you have a 8 cores, try to use 6 threads. In order to
+# enable I/O threads use the following configuration directive:
+#
+# io-threads 4
+#
+# Setting io-threads to 1 will just use the main thread as usual.
+# When I/O threads are enabled, we only use threads for writes, that is
+# to thread the write(2) syscall and transfer the client buffers to the
+# socket. However it is also possible to enable threading of reads and
+# protocol parsing using the following configuration directive, by setting
+# it to yes:
+#
+# io-threads-do-reads no
+```
+
+##### 5.2 Redis禁用keys, flushdb, flushall等命令
+
+在Redis中如果想禁用一些危险的命令，避免重大生成事故可以在配置文件彻底将命令删除，Redis 7 conf文件说明如下：
+
+```
+# It is also possible to completely kill a command by renaming it into
+# an empty string:
+#
+# rename-command CONFIG ""
+```
+
+##### 5.3 Redis查询键
+
+一般在Redis中查询key使用keys *这个命令来查询当前数据库中多有的键，但是如果键值数量很多，使用keys *就会引起慢查询的问题，100万的量级需要10s左右的查询时间，这样其他的Redis操作必须等待，严重影响Redis的性能。所以应该使用scan命令来查询大键值集合。scan命令是使用游标的迭代器来遍历Redis的key，语法为`SCAN cursor [MATCH pattern] [COUNT count]`
+
+- SCAN 命令是一个基于游标的迭代器，每次被调用之后， 都会向用户返回一个新的游标， 用户在下次迭代时需要使用这个新游标作为 SCAN 命令的游标参数， 以此来延续之前的迭代过程。
+- SCAN 返回一个包含两个元素的数组， 第一个元素是用于进行下一次迭代的新游标， 第二个元素则是一个数组， 这个数组中包含了所有被迭代的元素。如果新游标返回零表示迭代已结束。
+- SCAN的遍历顺序非常特别，它不是从第一维数组的第零位一直遍历到末尾，而是采用了高位进位加法来遍历。之所以使用这样特殊的方式进行遍历，是考虑到字典的扩容和缩容时避免槽位的遍历重复和遗漏。
+
+##### 5.3 Redis big key问题
+
+首先什么是big key，在Redis日常使用时，有些key的value值长度会很长，对于这些big key的操作将会导致一些性能问题，比如删除big key问题将会阻塞其他的Redis操作，所以需要对这些big key做特殊的处理。怎么定义big key一般实践的经验是：
+
+- 对于String类型的value大于10K就是big key；
+- 对于List，Hash，Set，ZSet其元素长度多余5000就是big key;
+
+怎样定位big key，当Redis中存在了上述的big key时，通过使用全库分析--bigkey来找到big key，或者使用MEMORY USAGE来查看具体key的值长度。对于bigkey的删除是会影响Redis的命令处理进程的，所以一般情况下对bigkey的删除使用渐进式删除的方法来进行删除。
+
+- 对于string类型的bigkey，一般使用DEL，超过10KB的key使用UNLINK来进行异步删除；
+- 对于hash类型的bigkey使用HSCAN + HDEL的组合命令来进行删除；
+- 对于list类型的bigkey使用ITRIM来进行渐进式的删除，直到元素全部删除；
+- 对于set类型的bigkey使用SSCAN + SREM的组合命令来进行删除；
+- 对于zset类型的bigkey使用ZREMRANGEBYRANK来进行渐进式删除。
+
+在Redis中禁止使用KEY *、FLUSHALL、FLUSHDB来查询和删除Redis中的key，由于这些命令都是阻塞式的，当删除数据量大的时候会阻塞住Redis的主线程处理其他的命令，有时甚至多则几秒的阻塞时间，所以尽量使用非阻塞式的命令来删除key，比如UNLINK，或者使用FLUSHALL、FLUSHDB的ASYNC选项。
+
+##### 5.4 Redis中hyperloglog、GEO、bitmap的实际使用
+
+- Redis HyperLogLog是用来做基数统计的数据类型，HyperLogLog的优点是在输入元素的数量或者体积非常大时，计算基数所需的空间总量固定且很小，Redis HyperLogLog键只需要花费12KB内存，就可以计算接近2^64个不同元素的基数，这和计算基数时元素越多耗费的内存就越多的集合形成鲜明对比。但是，因为HyperLogLog只会根据输入元素来计算基数，而不会存储输入元素本身，所以HyperLogLog不能像集合那样返回输入的各个元素；HyperLogLog适合进行UV(Unique visitor)和PV(Page visitor)的大数据基数统计，在算法上使用统计牺牲了一定的准确率来换取空间，误差仅仅只有0.81%。
+- Reids GEO数据类型是用来存储与地理位置相关的数据，首先需要了解经纬度。经度和纬度的合称组成一个坐标系统，又称为地理坐标系统，它是一种利用三维空间的球面来定义地球上的空间的球面坐标系统，能够标识地球上的任何一个位置。了解了经纬度的定义后我们再来看看基于位置的服务(Location Based Service)，在移动互联网时代，智能手机提供GSP定位功能，各大互联网公司上线了基于位置的服务，比如百度地图、美团外卖、微信附近的人等。Redis GEO数据类型非常适合这样的应用场景，为什么使用Redis而不是mysql等关系型数据库，第一点考虑是Redis能够处理高并发请求，第二点Redis是内存数据库处理速度更快，第三点Redis提供的数据类型大多数操作的时间复杂度都是O(1)或者O(logN)，相比与MySQL有很多优势。
+- Redis Bitmap本质是数组，它是基于String数据类型的按位操作。该数组由多个二进制位组成，每个二进制位都对应一个偏移量。Bitmap支持的最大位数是2^32位，它可以极大的节约存储空间，使用512M内存就可以存储多达42.9亿字节信息(2^32=4294967296)。Redis Bitmap最典型的应用场景就是签到，对于用户量不大的应用来说使用MySQL来记录用户的登入信息也是可行的，可以使用一条记录来记录单个用户一个月的登入数据，使用位运算计算一个int类型的数据就可以记录32位刚好满足一个月登入数据的要求。但是对于用户量很大的应用程序来说使用MySQL无法满足大量用户签到的需求了，那么使用Redis Bitmap是非常合适的选择。
+
+##### 5.5 布隆过滤器
+
+布隆过滤器(Bloom Filter)是1970年由布隆提出的。它实际上是一个很长的二进制数组加上一系列随机hash算法映射函数，主要用于判断一个元素是否存在于一个集合中。通常我们会遇见很多要判断一个元素是否存在于某个集合中的业务场景，一般想到的是将集合中所有元素保存起来，然后通过比较来确定是否存在。链表、树、哈希表等等数据结构都是这种思路。但是随着集合中元素的增加，我们需要的存储空间也会现线性增长，最终达到瓶颈。同时检索速度也越来越慢，上述三种结构的检索时间复杂度为O(n)、O(logN)、O(1)。那么对于判断一个元素是否存在于一个集合中，使用布隆过滤器的优点是占用空间少，而且插入和查询结果的时间复杂度为O(1)，但是缺点就是使用hash函数时会有hash冲突的问题，这样导致的结果就是使用布隆过滤器判断一个元素是否存在时，由于有可能的hash冲突则该结果不一定存在，但是判断结果为不存在时，则该元素一定不存在。
+
+布隆过滤器(Bloom Filter)是一种专门用来解决去重问题的高级数据结构，实质就是一个大型位数组和几个不同的无偏hash函数(无偏表示分布均匀)。由一个初值都为零的bit数组和多个hash函数构成，用来快速判断某个数据是否存在。但是跟HyperLogLog一样，它也一样由那么一点点不精确，也存在一定的误判概率。
+
+正式基于布隆过滤器的快速检测特性，可以把数据写入数据库时，使用布隆过滤器来做个标记。当缓存缺失后，应用查询数据库时，可以通过查询布隆过滤器快速判断数据是否存在。如果不存在，就不用再去数据库中查询了。这样即使发生了缓存穿透，大量的请求只会查询Redis和布隆过滤器，而不会积压到数据库，也就不会影响数据库的正常运行。布隆过滤器可以使用Redis实现，本身就能承受较大的并发访问压力。
+
+布隆过滤器的误判是指多个输入经过哈希之后在相同的bit位置置1，这样就无法判断究竟是哪个输入产生的，因此误判的根源在于相同的bit位被多次映射且置1。这种情况也造成了布隆过滤器的删除问题，因为布隆过滤器的每一个bit并不是独占的，很可能多个元素共享了某一个位。如果我们直接删除这个位的话会影响其他元素的判断结果，所以布隆过滤器可以添加元素，但是不能删除元素。因为删掉元素会导致误判率增加。在使用时最好不要让实际元素数量远大于初始化数量，新建数组时就应该尽可能的预估元素集合的大小一次性生成避免扩容。当实际元素数量远超过初始化数量时，应该对布隆过滤器进行重建，重新分配一个size更大的过滤器，再将所有的历史元素添加到新建的过滤器中。
