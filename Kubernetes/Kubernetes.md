@@ -77,8 +77,91 @@ Kubernetes源自于Goodgle内部的容器调度平台Borg，Borg的平台架构�
    - Role：用于定义namespace上的角色管理；
    - RoleBinding：将角色绑定到namespace对象上；
    - Spec：是“规约”，它是必须要的，它描述了资源对象的一种期望状态；
-   - Status：表示资源对象的实际状态，该属性由K81自己维护，K8S通过一些列控制器尽可能的控制资源对象进行管理，使其尽可能的达到期望状态。
+   - Status：表示资源对象的实际状态，该属性由K8S自己维护，K8S通过一些列控制器尽可能的控制资源对象进行管理，使其尽可能的达到期望状态。
    
    
 
 ### Kubernetes实战
+
+1. ##### 常用的kubectl命令
+
+`kubectl create`：  创建资源对象命令，-f选项后可以跟yaml文件创建yaml文件描述的资源对象，也可跟文件目录创建文件下的所有资源对象，还可以跟url使用http请求来返回yaml文件创建资源对象；
+
+`kubectl get`：查找资源对象，后面可以跟pods、services各种资源对象；
+
+`kubectl describe`：描述K8S中的各种资源对象，该命令可以返回资源对象的详细描述；
+
+`kubectl edit`：可以编辑K8S资源的yaml文件；
+
+`kubectl delete pod,service baz foo `：删除K8S中的资源对象
+
+`kubectl logs my-pod`：输出某个Pod对象的log
+
+`kubectl run -i --tty busybox --image=busybox -- sh`：交互式 shell 的方式运行 pod；
+
+`kubectl attach my-pod -i`：连接到运行中的容器；
+
+`kubectl port-forward my-pod 5000:6000 `：转发 pod 中的 6000 端口到本地的 5000 端口；
+
+`kubectl exec my-pod -- ls /`：在已存在的容器中执行命令（只有一个容器的情况下）；
+
+`kubectl cordon my-node `：标记 my-node 不可调度；
+
+`kubectl uncordon my-node`：标记 my-node 可调度；
+
+`kubectl drain my-node `：清空 my-node 以待维护；
+
+`kubectl top node my-node `：显示 my-node 的指标度量；
+
+`kubectl cluster-info `：显示 master 和服务的地址；
+
+
+
+一个简单的Pod的yaml文件示例如下：
+
+```yaml
+apiVersion: v1 # api 文档版本
+kind: Pod  # 资源对象类型，也可以配置为像Deployment、StatefulSet这一类的对象
+metadata: # Pod 相关的元数据，用于描述 Pod 的数据
+  name: nginx-demo # Pod 的名称
+  labels: # 定义 Pod 的标签
+    type: app # 自定义 label 标签，名字为 type，值为 app
+    test: 1.0.0 # 自定义 label 标签，描述 Pod 版本号
+  namespace: 'default' # 命名空间的配置
+spec: # 期望 Pod 按照这里面的描述进行创建
+  containers: # 对于 Pod 中的容器描述
+  - name: nginx # 容器的名称
+    image: nginx:1.7.9 # 指定容器的镜像
+    imagePullPolicy: IfNotPresent # 镜像拉取策略，指定如果本地有就用本地的，如果没有就拉取远程的
+    command: # 指定容器启动时执行的命令
+    - nginx
+    - -g
+    - 'daemon off;' # nginx -g 'daemon off;'
+    workingDir: /usr/share/nginx/html # 定义容器启动后的工作目录
+    ports:
+    - name: http # 端口名称
+      containerPort: 80 # 描述容器内要暴露什么端口
+      protocol: TCP # 描述该端口是基于哪种协议通信的
+    env: # 环境变量
+    - name: JVM_OPTS # 环境变量名称
+      value: '-Xms128m -Xmx128m' # 环境变量的值
+    reousrces:
+      requests: # 最少需要多少资源
+        cpu: 100m # 限制 cpu 最少使用 0.1 个核心
+        memory: 128Mi # 限制内存最少使用 128兆
+      limits: # 最多可以用多少资源
+        cpu: 200m # 限制 cpu 最多使用 0.2 个核心
+        memory: 256Mi # 限制 最多使用 256兆
+  restartPolicy: OnFailure # 重启策略，只有失败的情况才会重启
+```
+
+
+
+2. ##### Pod深入理解
+
+Pod的探针机制是指容器内应用的监测机制，根据不同的探针来判断容器里应用的当前状态，Pod的探针支持三种检测方式：ExecAction(在容器内部执行一个命令，如果返回值为 0，则任务容器时健康的)、TCPSocketAction(通过 tcp 连接监测容器内端口是否开放，如果开放则证明该容器健康)、HTTPGetAction(生产环境用的较多的方式，发送 HTTP 请求到容器内的应用程序，如果接口返回的状态码在 200~400 之间，则认为容器健康)。Pod支持三种探针：
+
+1. StartupProbe：当配置了 startupProbe 后，会先禁用其他探针，直到 startupProbe 成功后，其他探针才会继续。由于有时候不能准确预估应用一定是多长时间启动成功，因此配置另外两种方式不方便配置初始化时长来检测，而配置了 statupProbe 后，只有在应用启动成功了，才会执行另外两种探针，可以更加方便的结合使用另外两种探针使用。
+2. LivenessProbe：用于探测容器中的应用是否运行，如果探测失败，kubelet 会根据配置的重启策略进行重启，若没有配置，默认就认为容器启动成功，不会执行重启策略。
+3. ReadinessProbe：用于探测容器内的程序是否健康，它的返回值如果返回 success，那么就认为该容器已经完全启动，并且该容器是可以接收外部流量的。
+
