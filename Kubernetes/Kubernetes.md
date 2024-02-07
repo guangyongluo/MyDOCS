@@ -115,7 +115,17 @@ Kubernetes源自于Goodgle内部的容器调度平台Borg，Borg的平台架构�
 
 `kubectl cluster-info `：显示 master 和服务的地址；
 
+`kubectl label po my-pod app=hello`：临时创建 label；
 
+`kubectl label po my-pod app=hello2 --overwrite`：修改已经存在的标签；
+
+`kubectl get po -A -l app=hello`：查找label为app=hello的Pod；
+
+`kubectl get po --show-labels`：查看所有Pod的label；
+
+
+
+2. ##### Pod深入理解
 
 一个简单的Pod的yaml文件示例如下：
 
@@ -123,7 +133,7 @@ Kubernetes源自于Goodgle内部的容器调度平台Borg，Borg的平台架构�
 apiVersion: v1 # api 文档版本
 kind: Pod  # 资源对象类型，也可以配置为像Deployment、StatefulSet这一类的对象
 metadata: # Pod 相关的元数据，用于描述 Pod 的数据
-  name: nginx-demo # Pod 的名称
+  name: nginx-po # Pod 的名称
   labels: # 定义 Pod 的标签
     type: app # 自定义 label 标签，名字为 type，值为 app
     test: 1.0.0 # 自定义 label 标签，描述 Pod 版本号
@@ -131,8 +141,16 @@ metadata: # Pod 相关的元数据，用于描述 Pod 的数据
 spec: # 期望 Pod 按照这里面的描述进行创建
   containers: # 对于 Pod 中的容器描述
   - name: nginx # 容器的名称
-    image: nginx:1.7.9 # 指定容器的镜像
+    image: nginx:1.25.3 # 指定容器的镜像
     imagePullPolicy: IfNotPresent # 镜像拉取策略，指定如果本地有就用本地的，如果没有就拉取远程的
+    startupProbe:
+      httpGet:
+        path: /test
+        port: 80
+      timeoutSeconds: 5 # 超时时间
+      periodSeconds: 10 # 监测间隔时间
+      successThreshold: 1 # 检查 1 次成功就表示成功
+      failureThreshold: 3 # 监测失败 2 次就表示失败
     command: # 指定容器启动时执行的命令
     - nginx
     - -g
@@ -145,7 +163,7 @@ spec: # 期望 Pod 按照这里面的描述进行创建
     env: # 环境变量
     - name: JVM_OPTS # 环境变量名称
       value: '-Xms128m -Xmx128m' # 环境变量的值
-    reousrces:
+    resources:
       requests: # 最少需要多少资源
         cpu: 100m # 限制 cpu 最少使用 0.1 个核心
         memory: 128Mi # 限制内存最少使用 128兆
@@ -157,11 +175,125 @@ spec: # 期望 Pod 按照这里面的描述进行创建
 
 
 
-2. ##### Pod深入理解
-
 Pod的探针机制是指容器内应用的监测机制，根据不同的探针来判断容器里应用的当前状态，Pod的探针支持三种检测方式：ExecAction(在容器内部执行一个命令，如果返回值为 0，则任务容器时健康的)、TCPSocketAction(通过 tcp 连接监测容器内端口是否开放，如果开放则证明该容器健康)、HTTPGetAction(生产环境用的较多的方式，发送 HTTP 请求到容器内的应用程序，如果接口返回的状态码在 200~400 之间，则认为容器健康)。Pod支持三种探针：
 
 1. StartupProbe：当配置了 startupProbe 后，会先禁用其他探针，直到 startupProbe 成功后，其他探针才会继续。由于有时候不能准确预估应用一定是多长时间启动成功，因此配置另外两种方式不方便配置初始化时长来检测，而配置了 statupProbe 后，只有在应用启动成功了，才会执行另外两种探针，可以更加方便的结合使用另外两种探针使用。
-2. LivenessProbe：用于探测容器中的应用是否运行，如果探测失败，kubelet 会根据配置的重启策略进行重启，若没有配置，默认就认为容器启动成功，不会执行重启策略。
-3. ReadinessProbe：用于探测容器内的程序是否健康，它的返回值如果返回 success，那么就认为该容器已经完全启动，并且该容器是可以接收外部流量的。
+2. LivenessProbe：用于探测容器中的应用是否运行，如果探测失败，kubelet 会根据配置的重启策略进行重启，若没有配置，默认就认为容器启动成功，不会执行重启策略。该探针会在Pod启动后一直运行，知道整个生命周期结束。
+3. ReadinessProbe：用于探测容器内的程序是否健康，它的返回值如果返回 success，那么就认为该容器已经完全启动，并且该容器是可以接收外部流量的。该探针会在Pod启动后一直运行，知道整个生命周期结束。
+
+Pod的生命周期，当Kubernetes API Server收到create请求后就开始了一个Pod的生命周期，前期是一些准备Pod运行阶段，包括一些image下载，环境配置的准备，pause底层容器的创建。当准备阶段完成后，就正式进入Pod的启动阶段，可以为pod配置一个或多个init container来初始化Pod，之后就是postStart钩子函数运行阶段，但是需要注意的是command命令和postStart钩子函数不存在先后顺序，所以一般初始化工作都使用init container来完成，当postStart执行结束后就开始了前面讲的StartupProbe、LivenessProbe和ReadinessProbe探针的运行，之后就是Pod容器的运行阶段。最后在Pod生命周期结束之前还有一个preStop的钩子函数来执行一些清理工作，需要注意的是执行时间必须小于terminationGracePeriodSeconds，该配置是Pod变为删除中的状态后，会给 pod 一个宽限期，让 pod 去执行一些清理或销毁操作，可以根据具体的清理工作来设置该配置的值。
+
+3. ##### Deployment深入理解
+
+Deployment是对Pod的高级抽象，是对ReplicaSet更高层次的封装，提供了滚动更新、回滚、扩容缩容和暂停与恢复等功能，我们先来看看一个Deployment的yaml文件：
+
+```yaml
+apiVersion: apps/v1 # deployment api 版本
+kind: Deployment # 资源类型为 deployment
+metadata: # 元信息
+  labels: # 标签
+    app: nginx-deploy # 具体的 key: value 配置形式
+  name: nginx-deploy # deployment 的名字
+  namespace: default # 所在的命名空间
+spec:
+  replicas: 1 # 期望副本数
+  revisionHistoryLimit: 10 # 进行滚动更新后，保留的历史版本数
+  selector: # 选择器，用于找到匹配的 RS
+    matchLabels: # 按照标签匹配
+      app: nginx-deploy # 匹配的标签key/value
+  strategy: # 更新策略
+    rollingUpdate: # 滚动更新配置
+      maxSurge: 25% # 进行滚动更新时，更新的个数最多可以超过期望副本数的个数/比例
+      maxUnavailable: 25% # 进行滚动更新时，最大不可用比例更新比例，表示在所有副本数中，最多可以有多少个不更新成功
+    type: RollingUpdate # 更新类型，采用滚动更新
+  template: # pod 模板
+    metadata: # pod 的元信息
+      labels: # pod 的标签
+        app: nginx-deploy
+    spec: # pod 期望信息
+      containers: # pod 的容器
+      - image: nginx:1.9.1 # 镜像
+        imagePullPolicy: IfNotPresent # 拉取策略
+        name: nginx # 容器名称
+      restartPolicy: Always # 重启策略
+      terminationGracePeriodSeconds: 30 # 删除操作最多宽限多长时间
+
+```
+
+只有修改了 deployment 配置文件中的 template 中的属性后，才会触发更新操作。使用`kubectl set image deployment/nginx-deployment nginx=nginx:1.25.3`可以修改单个属性或者通过 `kubectl edit deployment/nginx-deployment `对整个yaml配置文件进行修改。查看滚动更新的结果可以使用命令kubectl rollout status deploy <deployment_name>，最后使用`kubectl describe deploy <deployment_name>`展示发生的事件列表也可以看到滚动更新过程，通过 `kubectl get deployments `获取部署信息，UP-TO-DATE 表示已经有多少副本达到了配置中要求的数目，通过 `kubectl get rs `可以看到增加了一个新的ReplicaSet，通过 `kubectl get pods`可以看到所有pod关联的ReplicaSet变成了新的。
+
+有时候你可能想回退一个Deployment，当Deployment不稳定时，比如一直crash looping。默认情况下，kubernetes会在系统中保存前两次的Deployment的rollout历史记录，以便你可以随时会退(你可以修改revision history limit来更改保存的revision数)。我们来看一个案例：更新 deployment 时参数不小心写错，如使用`kubectl set image deployment/nginx-deploy nginx=nginx:1.91`将nginx:1.9.1写成了nginx:1.91，监控滚动升级状态，由于镜像名称错误，下载镜像失败，因此更新过程会卡住。使用`kubectl rollout status deployments nginx-deploy`来查看rollout的状态，使用`kubectl get rs`来查看ReplicaSet，会发现有问题的ReplicaSet。使用`kubectl get pods`获取 pods 信息，我们可以看到关联到新的ReplicaSet的pod，状态处于 ImagePullBackOff 状态为了修复这个问题，我们需要找到需要回退的revision进行回退，使用`kubectl rollout history deployment/nginx-deploy`可以获取revison的列表使用`kubectl rollout history deployment/nginx-deploy --revision=2`可以查看详细信息，确认要回退的版本后，可以通过`kubectl rollout undo deployment/nginx-deploy`可以回退到上一个版本，也可以使用`kubectl rollout undo deployment/nginx-deploy --to-revision=2`回退到指定的revision，再次通过`kubectl get deployment`和`kubectl describe deployment`可以看到，我们的版本已经回退到对应的 revison 上了，可以通过设置 .spec.revisonHistoryLimit 来指定 deployment 保留多少 revison，如果设置为 0，则不允许 deployment 回退了。
+
+通过`kube scale`命令可以进行自动扩容/缩容，以及通过`kube edit`编辑replcas属性也可以实现扩容/缩容，扩容与缩容只是直接创建副本数，没有更新pod template因此不会创建新的ReplicaSet。
+
+由于每次对pod template中的信息发生修改后，都会触发更新deployment操作，那么此时如果频繁修改信息，就会产生多次更新，而实际上只需要执行最后一次更新即可，当出现此类情况时我们就可以暂停deployment的rollout。使用`kubectl rollout pause deployment <name> `就可以实现暂停，直到你下次恢复后才会继续进行滚动更新，尝试对容器进行修改，然后查看是否发生更新操作了
+使用`kubectl set image deploy <name> nginx=nginx:1.17.9`命名修改image属性，然后使用`kubectl get po`来查看Pod。通过以上操作可以看到实际并没有发生修改，此时我们再次进行修改一些属性，使用`kubectl set resources deploy <deploy_name> -c <container_name> --limits=cpu=200m,memory=128Mi --requests=cpu100m,memory=64Mi`限制 nginx 容器的最大cpu为0.2核，最大内存为128M，最小内存为64M，最小cpu为0.1核，通过格式化输出`kubectl get deploy <name> -o yaml`，可以看到配置确实发生了修改，再使用`kubectl get po`可以看到 pod 没有被更新。那么此时我们再恢复 rollout，通过命令`kubectl rollout deploy <name>`，恢复后，我们再次查看ReplicaSet和Pod信息，我们可以看到就开始进行滚动更新操作了。
+
+##### 4.深入理解StatefulSet
+
+对于有状态的服务我们需要保存服务的状态信息，比如网络、数据等信息，所以K8S给我们提供了一个StatefulSet的部署方式，可以在Pod删除、更新、重启后还能还原之前的状态信息。我们先来看一看StatefulSet的yaml文件：
+
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet # StatefulSet资源
+metadata:
+  name: web
+spec:
+  serviceName: "nginx" # 使用service来管理DNS
+  replicas: 2
+  selector:
+    matchLables:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80 # 容器内部暴露的端口
+          name: web # 该端口配置的名字
+        volumeMounts: # 加载数据卷
+        - name: www #加载数据卷的名字
+          mountPath: /usr/share/nginx/html #加载到容器内的路劲
+  volumeClaimTemplates: # 数据卷模板
+  - metadata: # 数据卷的描述
+      name: www # 数据卷的名字
+      annotations: # 数据卷的注解信息
+        volume.alpha.kubernetes.io/storage-class: anything
+    spec: # 数据卷的规约配置
+      accessModes: [ "ReadWriteOnce" ] # 数据卷的访问模式
+      resources:
+        requests:
+          storage: 1Gi # 数据卷的最小容量
+
+```
+
+StatefulSet中没有ReplicaSet的概念，它直接对Pod进行更新、扩容和缩容。可以使用上面的yaml文件来进行StatefulSet的操作，使用`kubectl create -f web.yaml`来创建StatefulSet。使用`kubectl get service nginx`和`kubectl get statefulset web`来查看 service 和 statefulset => sts，使用`kubectl get pvc`来查看 PVC 信息，使用`kubectl get pods -l app=nginx`来查看创建的 pod，StatefulSet中创建的pod是有序的，如果想查看具体的DNS信息可以运行一个pod，使用`kubectl run -i --tty --image busybox dns-test --restart=Never --rm /bin/sh`基础镜像为busybox工具包，利用里面的nslookup可以看到dns信息，进入容器后运行`nslookup web-0.nginx`来查看DNS的路由信息。
+
+StatefulSet的扩容和缩容命令：`kubectl scale statefulset web --replicas=5`或者`kubectl patch statefulset web -p '{"spec":{"replicas":3}}'`
+
+StatefulSet 也可以采用滚动更新策略，同样是修改pod template属性后会触发更新，但是由于pod是有序的，在StatefulSet中更新时是基于pod的顺序倒序更新的。利用滚动更新中的partition属性，可以实现简易的灰度发布的效果。例如我们有 5 个pod，如果当partition 设置为3，那么此时滚动更新时，只会更新那些序号>= 3的pod利用该机制，我们可以通过控制partition的值，来决定只更新其中一部分pod，确认没有问题后再主键增大更新的pod数量，最终实现全部pod更新。StatefulSet还支持OnDelete更新策略，只有在pod被删除时会进行更新操作。
+
+由于StatefulSet创建时会涉及到多个资源，所以删除StatefulSet时也需要将创建的资源一并删除，首先StatefulSet和Pod可以级联删除，但是Headless Service和Volume需要指定删除，默认StatefulSet和Pod是级联删除的使用删除命令`kubectl delete statefulset web`删除 statefulset 时会同时删除 pods，如果不想级联删除可以使用--cascade=false参数指定。StatefulSet删除后PVC还会保留着，数据不再使用的话也需要删除，使用`kubectl delete pvc www-web-0 www-web-1`来删除对应的PVC。
+
+
+
 
