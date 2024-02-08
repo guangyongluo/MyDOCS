@@ -220,7 +220,7 @@ spec:
 
 ```
 
-只有修改了 deployment 配置文件中的 template 中的属性后，才会触发更新操作。使用`kubectl set image deployment/nginx-deployment nginx=nginx:1.25.3`可以修改单个属性或者通过 `kubectl edit deployment/nginx-deployment `对整个yaml配置文件进行修改。查看滚动更新的结果可以使用命令kubectl rollout status deploy <deployment_name>，最后使用`kubectl describe deploy <deployment_name>`展示发生的事件列表也可以看到滚动更新过程，通过 `kubectl get deployments `获取部署信息，UP-TO-DATE 表示已经有多少副本达到了配置中要求的数目，通过 `kubectl get rs `可以看到增加了一个新的ReplicaSet，通过 `kubectl get pods`可以看到所有pod关联的ReplicaSet变成了新的。
+只有修改了 deployment 配置文件中的 template 中的属性后，才会触发更新操作。使用`kubectl set image deployment/nginx-deploy nginx=nginx:1.25.3`可以修改单个属性或者通过 `kubectl edit deployment/nginx-deploy`对整个yaml配置文件进行修改。查看滚动更新的结果可以使用命令`kubectl rollout status deploy nginx-deploy`，最后使用`kubectl describe deploy <deployment_name>`展示发生的事件列表也可以看到滚动更新过程，通过 `kubectl get deployments `获取部署信息，UP-TO-DATE 表示已经有多少副本达到了配置中要求的数目，通过 `kubectl get rs`可以看到增加了一个新的ReplicaSet，通过 `kubectl get pods`可以看到所有pod关联的ReplicaSet变成了新的。
 
 有时候你可能想回退一个Deployment，当Deployment不稳定时，比如一直crash looping。默认情况下，kubernetes会在系统中保存前两次的Deployment的rollout历史记录，以便你可以随时会退(你可以修改revision history limit来更改保存的revision数)。我们来看一个案例：更新 deployment 时参数不小心写错，如使用`kubectl set image deployment/nginx-deploy nginx=nginx:1.91`将nginx:1.9.1写成了nginx:1.91，监控滚动升级状态，由于镜像名称错误，下载镜像失败，因此更新过程会卡住。使用`kubectl rollout status deployments nginx-deploy`来查看rollout的状态，使用`kubectl get rs`来查看ReplicaSet，会发现有问题的ReplicaSet。使用`kubectl get pods`获取 pods 信息，我们可以看到关联到新的ReplicaSet的pod，状态处于 ImagePullBackOff 状态为了修复这个问题，我们需要找到需要回退的revision进行回退，使用`kubectl rollout history deployment/nginx-deploy`可以获取revison的列表使用`kubectl rollout history deployment/nginx-deploy --revision=2`可以查看详细信息，确认要回退的版本后，可以通过`kubectl rollout undo deployment/nginx-deploy`可以回退到上一个版本，也可以使用`kubectl rollout undo deployment/nginx-deploy --to-revision=2`回退到指定的revision，再次通过`kubectl get deployment`和`kubectl describe deployment`可以看到，我们的版本已经回退到对应的 revison 上了，可以通过设置 .spec.revisonHistoryLimit 来指定 deployment 保留多少 revison，如果设置为 0，则不允许 deployment 回退了。
 
@@ -229,7 +229,7 @@ spec:
 由于每次对pod template中的信息发生修改后，都会触发更新deployment操作，那么此时如果频繁修改信息，就会产生多次更新，而实际上只需要执行最后一次更新即可，当出现此类情况时我们就可以暂停deployment的rollout。使用`kubectl rollout pause deployment <name> `就可以实现暂停，直到你下次恢复后才会继续进行滚动更新，尝试对容器进行修改，然后查看是否发生更新操作了
 使用`kubectl set image deploy <name> nginx=nginx:1.17.9`命名修改image属性，然后使用`kubectl get po`来查看Pod。通过以上操作可以看到实际并没有发生修改，此时我们再次进行修改一些属性，使用`kubectl set resources deploy <deploy_name> -c <container_name> --limits=cpu=200m,memory=128Mi --requests=cpu100m,memory=64Mi`限制 nginx 容器的最大cpu为0.2核，最大内存为128M，最小内存为64M，最小cpu为0.1核，通过格式化输出`kubectl get deploy <name> -o yaml`，可以看到配置确实发生了修改，再使用`kubectl get po`可以看到 pod 没有被更新。那么此时我们再恢复 rollout，通过命令`kubectl rollout deploy <name>`，恢复后，我们再次查看ReplicaSet和Pod信息，我们可以看到就开始进行滚动更新操作了。
 
-##### 4.深入理解StatefulSet
+4. ##### 深入理解StatefulSet
 
 对于有状态的服务我们需要保存服务的状态信息，比如网络、数据等信息，所以K8S给我们提供了一个StatefulSet的部署方式，可以在Pod删除、更新、重启后还能还原之前的状态信息。我们先来看一看StatefulSet的yaml文件：
 
@@ -257,7 +257,7 @@ spec:
   serviceName: "nginx" # 使用service来管理DNS
   replicas: 2
   selector:
-    matchLables:
+    matchLabels:
       app: nginx
   template:
     metadata:
@@ -266,7 +266,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.7.9
+        image: nginx:1.9.1
         ports:
         - containerPort: 80 # 容器内部暴露的端口
           name: web # 该端口配置的名字
@@ -293,6 +293,97 @@ StatefulSet的扩容和缩容命令：`kubectl scale statefulset web --replicas=
 StatefulSet 也可以采用滚动更新策略，同样是修改pod template属性后会触发更新，但是由于pod是有序的，在StatefulSet中更新时是基于pod的顺序倒序更新的。利用滚动更新中的partition属性，可以实现简易的灰度发布的效果。例如我们有 5 个pod，如果当partition 设置为3，那么此时滚动更新时，只会更新那些序号>= 3的pod利用该机制，我们可以通过控制partition的值，来决定只更新其中一部分pod，确认没有问题后再主键增大更新的pod数量，最终实现全部pod更新。StatefulSet还支持OnDelete更新策略，只有在pod被删除时会进行更新操作。
 
 由于StatefulSet创建时会涉及到多个资源，所以删除StatefulSet时也需要将创建的资源一并删除，首先StatefulSet和Pod可以级联删除，但是Headless Service和Volume需要指定删除，默认StatefulSet和Pod是级联删除的使用删除命令`kubectl delete statefulset web`删除 statefulset 时会同时删除 pods，如果不想级联删除可以使用--cascade=false参数指定。StatefulSet删除后PVC还会保留着，数据不再使用的话也需要删除，使用`kubectl delete pvc www-web-0 www-web-1`来删除对应的PVC。
+
+5. ##### 深入理解DaemonSet
+
+DaemonSet与之前讨论的Deployment和StatefulSet都不一样，DaemonSet是针对Node来创建Pod的，也就是说DaemonSet选择器会找个匹配的Node来为每个Node创建Pod。其主要用于日志收集，服务监控等应用。我们来看看一个简单的日志收集的DaemonSet的yaml文件：
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet # 创建DaemonSet资源
+metadata:
+  name: fluentd # DaemonSet的名字
+spec:
+  selector:
+    matchLables:
+      app: logging
+  template:
+    metadata:
+      labels: # label的配置
+        app: logging
+        id: fluentd
+      name: fluentd # Pod的名字
+    spec:
+      containers:
+      - name: fluentd-es # 容器的名字
+        image: agilestacks/fluentd-elasticsearch:v1.3.0 # 指定容器的image
+        env: # 环境变量
+         - name: FLUENTD_ARGS
+           value: -qq
+        volumeMounts: # 加载数据卷，避免数据丢失
+         - name: containers # 数据卷名字
+           mountPath: /var/lib/docker/containers # 将数据卷挂载到的路径
+         - name: varlog
+           mountPath: /varlog
+      volumes: # 定义数据卷的类型
+         - hostPath: # 数据卷类型，主机路劲的模式，与Node主机共享目录
+             path: /var/lib/docker/containers # Node中的共享目录
+           name: containers # 定义数据卷的名称
+         - hostPath:
+             path: /var/log
+           name: varlog
+
+```
+
+DaemonSet会忽略Node的unschedulable状态，有两种方式来指定Pod只运行在指定的Node节点上：
+
+- nodeSelector：只调度到匹配指定label的Node上；
+- nodeAffinity：功能更丰富的Node选择器，比如支持集合操作；
+- podAffinity：调度到满足条件的Pod所在的Node上。
+
+6. ##### HPA深入理解
+
+通过观察Pod的CPU、内存使用率或自定义metrics进行自动的扩容或缩容pod的数量。通常用于Deployment，不适用于无法扩/缩容的对象，如DaemonSet。控制管理器每隔30s(可以通过–horizontal-pod-autoscaler-sync-period修改)查询metrics的资源使用情况。
+
+实现CPU或内存的监控，首先有个前提条件是该对象必须配置了resources.requests.cpu或resources.requests.memory才可以，可以配置当CPU/memory 达到上述配置的百分比后进行扩容或缩容。创建一个 HPA：
+
+1. 先准备好一个有做资源限制的deployment；
+2. 执行命令`kubectl autoscale deploy nginx-deploy --cpu-percent=20 --min=2 --max=5`
+3. 通过`kubectl get hpa`可以获取 HPA 信息
+
+测试：找到对应服务的 service，编写循环测试脚本提升内存与CPU负载`while true; do wget -q -O- http://<ip:port> > /dev/null ; done`，可以通过多台机器执行上述命令，增加负载，当超过负载后可以查看Pod的扩容情况。使用`kubectl top pods`查看pods 资源使用情况，扩容测试完成后，再关闭循环执行的指令，让CPU占用率降下来，然后过5分钟后查看自动缩容情况。
+
+7. ##### Service深入理解
+
+Service主要负责Node内部容器之间的网络访问，其主要的原理是当新建Service后会使用selector来查询相关联的Pod，同时创建一个同名的endpoint来记录着所有selector选择器查询结果的Pod的IP地址，这个IP寻址是通过每个Node的Proxy来完成的，当配置完成后，Pod之间的访问将通过PodA => Service => Endpoint => Porxy => PodB来完成。一个简单的Service的yaml文件：
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  labels:
+    app: nginx-svc
+spec:
+  ports:
+  - name: http # service端口配置的名称
+    protocol: TCP # 端口绑定的协议，支持 TCP、UDP、SCTP，默认为 TCP
+    port: 80 # service自己的端口
+    targetPort: 9527 # 目标pod的端口
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector: # 选中当前service匹配哪些pod，对哪些pod的东西流量进行代理
+    app: nginx
+
+```
+
+
+使用`kubectl get svc` 查看Service信息，通过Service的cluster ip进行访问，使用`kubectl get po -o wide`查看Pod信息，通过Pod的IP进行访问，创建其他Pod通过Service Name进行访问(推荐)。测试可以使用busybox来访问service name使用`kubectl exec -it busybox -- sh`进入容器后使用`curl http://nginx-svc`来访问Pod服务。默认在当前 namespace 中访问，如果需要跨Namespace 访问Pod，则在Service Name 后面加上 .<namespace> 即可，可以使用`curl http://nginx-svc.default`来访问带Namespace的服务。
+
+8. ##### Ingress深入理解
+
 
 
 
