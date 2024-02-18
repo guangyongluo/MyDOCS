@@ -125,6 +125,316 @@ Docker除了通过网络访问外，还提供了两个很方便的功能来满�
 * 恰当使用多步创建：通过多步骤创建，可以将编译和运行等过程分开，保证最终生成的镜像只包含运行应用所需要的最小化环境。当然，用户也可以通过分别构造编译镜像和运行镜像来达到类似的结果，但这种方式需要维护多个Dockerfile；
 * 
 
-```
+```dockerfile
 docker run -d --name elasticsearch_6.8.18 -p 9200:9200 -p 9300:9300 -v elasticsearch_6.8.18_data:/usr/share/elasticsearch/data -v elasticsearch_6.8.18_config:/usr/share/elasticsearch/config -v elasticsearch_6.8.18_plugins:/usr/share/elasticsearch/plugins elasticsearch:6.8.18
 ```thethethethethe
+```
+
+### Docker高级篇
+
+Docker是基于Linux kernel中的namespace, CGroups, UnionFileSystem等技术封装成的一种自定义容器格式，从而提供一套容器运行时环境，Docker使用了Linux的Namespaces技术来进行资源隔离，如PID Namespace隔离进程，Mount Namespace隔离文件系统，Network Namespace隔离网络等：
+
+1. namespace用来隔离各种资源比如：pid(进程)，net(网络)，mnt(挂载点)；
+2. CGroups：Controller groups用来做资源限制比如：CPU，内存；
+3. UnionFileSystem：用来做image和Container分层。
+
+##### 1. Network Namespace
+
+Network NameSpace是实现网络虚拟化的重要功能，它能实现多个隔离的网络空间，它们有独自的网络栈信息。不管是虚拟机还是容器，运行的时候就像自己在独立的网络中。我们可以使用ip命令简单地来看看Linux的网络以及Network Namespace：
+
+- 查看所有网卡信息：
+
+```shell
+[root@localhost ~]# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:be:2c:20 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.128.4/24 brd 192.168.128.255 scope global dynamic noprefixroute ens33
+       valid_lft 86357sec preferred_lft 86357sec
+    inet6 fd15:4ba5:5a2b:1008:4d9d:52a2:3c6:6751/64 scope global dynamic noprefixroute 
+       valid_lft 2591974sec preferred_lft 604774sec
+    inet6 fe80::3398:cad4:23a2:d9bd/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+3: virbr0: <BROADCAST,MULTICAST> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+    link/ether 52:54:00:ab:31:cf brd ff:ff:ff:ff:ff:ff
+4: virbr0-nic: <BROADCAST,MULTICAST> mtu 1500 qdisc fq_codel master virbr0 state DOWN group default qlen 1000
+    link/ether 52:54:00:ab:31:cf brd ff:ff:ff:ff:ff:ff
+
+```
+
+- 查看所有的的Network Namespace:
+
+```shell
+[root@localhost ~]# ip netns list
+[root@localhost ~]# 
+```
+
+- 新建一个Network Namespace:
+
+```shell
+[root@localhost ~]# ip netns add ns1
+[root@localhost ~]# ip netns list
+ns1
+```
+
+- 查看新建Network Namespace中的网卡信息：
+
+```shell
+[root@localhost ~]# ip netns exec ns1 ip a
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+```
+
+- 启动Network Namespace网卡：
+
+```shell
+[root@localhost network-scripts]# ip netns exec ns1 ip link set lo up
+[root@localhost network-scripts]# ip netns exec ns1 ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+
+```
+
+- 在Linux宿主机中可以使用veth pair来实现两个Network Namespace互通，比如使用`ip link add veth-ns1 type veth peer name veth-ns2`来创建veth pair，参看下面的例子：
+
+```shell
+[root@localhost network-scripts]# ip link add veth-ns1 type veth peer name veth-ns2
+[root@localhost network-scripts]# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: ens33: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:0c:29:be:2c:20 brd ff:ff:ff:ff:ff:ff
+3: virbr0: <BROADCAST,MULTICAST> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+    link/ether 52:54:00:ab:31:cf brd ff:ff:ff:ff:ff:ff
+4: virbr0-nic: <BROADCAST,MULTICAST> mtu 1500 qdisc fq_codel master virbr0 state DOWN group default qlen 1000
+    link/ether 52:54:00:ab:31:cf brd ff:ff:ff:ff:ff:ff
+5: veth-ns2@veth-ns1: <BROADCAST,MULTICAST,M-DOWN> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether ae:20:44:77:95:41 brd ff:ff:ff:ff:ff:ff
+6: veth-ns1@veth-ns2: <BROADCAST,MULTICAST,M-DOWN> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 8a:80:9b:c4:10:04 brd ff:ff:ff:ff:ff:ff
+
+```
+
+- 然后将创建好的 veth-ns1交给namespace1，把veth-ns2交给namespace2
+
+```shell
+[root@localhost network-scripts]# ip link set veth-ns1 netns ns1
+[root@localhost network-scripts]# ip link set veth-ns2 netns ns2
+[root@localhost network-scripts]# ip netns exec ns1 ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+6: veth-ns1@if5: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 8a:80:9b:c4:10:04 brd ff:ff:ff:ff:ff:ff link-netns ns2
+[root@localhost network-scripts]# ip netns exec ns2 ip a
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+5: veth-ns2@if6: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether ae:20:44:77:95:41 brd ff:ff:ff:ff:ff:ff link-netns ns1
+```
+
+- 为veth-ns1和veth-ns2分配ip并启动这两个网卡接口
+
+```shell
+[root@localhost network-scripts]# ip netns exec ns1 ip addr add 192.168.0.11/24 dev veth-ns1
+[root@localhost network-scripts]# ip netns exec ns2 ip addr add 192.168.0.12/24 dev veth-ns2
+[root@localhost network-scripts]# ip netns exec ns1 ip link set veth-ns1 up
+[root@localhost network-scripts]# ip netns exec ns2 ip link set veth-ns2 up
+[root@localhost network-scripts]# ip netns exec ns1 ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+6: veth-ns1@if5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 8a:80:9b:c4:10:04 brd ff:ff:ff:ff:ff:ff link-netns ns2
+    inet 192.168.0.11/24 scope global veth-ns1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::8880:9bff:fec4:1004/64 scope link 
+       valid_lft forever preferred_lft forever
+[root@localhost network-scripts]# ip netns exec ns2 ip a
+1: lo: <LOOPBACK> mtu 65536 qdisc noop state DOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+5: veth-ns2@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether ae:20:44:77:95:41 brd ff:ff:ff:ff:ff:ff link-netns ns1
+    inet 192.168.0.12/24 scope global veth-ns2
+       valid_lft forever preferred_lft forever
+    inet6 fe80::ac20:44ff:fe77:9541/64 scope link 
+       valid_lft forever preferred_lft forever
+
+```
+
+- 在两个Network Namespace中相互ping对方的ip：
+
+```shell
+[root@localhost network-scripts]# ip netns exec ns1 ping 192.168.0.12
+PING 192.168.0.12 (192.168.0.12) 56(84) bytes of data.
+64 bytes from 192.168.0.12: icmp_seq=1 ttl=64 time=0.249 ms
+64 bytes from 192.168.0.12: icmp_seq=2 ttl=64 time=0.315 ms
+64 bytes from 192.168.0.12: icmp_seq=3 ttl=64 time=0.104 ms
+^C
+--- 192.168.0.12 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 75ms
+rtt min/avg/max/mdev = 0.104/0.222/0.315/0.089 ms
+[root@localhost network-scripts]# ip netns exec ns2 ping 192.168.0.11
+PING 192.168.0.11 (192.168.0.11) 56(84) bytes of data.
+64 bytes from 192.168.0.11: icmp_seq=1 ttl=64 time=0.079 ms
+64 bytes from 192.168.0.11: icmp_seq=2 ttl=64 time=0.104 ms
+64 bytes from 192.168.0.11: icmp_seq=3 ttl=64 time=0.118 ms
+^C
+--- 192.168.0.11 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 46ms
+rtt min/avg/max/mdev = 0.079/0.100/0.118/0.018 ms
+
+```
+
+以上就是在Linux中的Network Namespace相互独立的网络接口可以使用veth pair来实现互通的演示，实际上在docker的网络桥接模式中就是使用的这种方式来实现容器之间的互通，在docker中启动一个容器就会创建一个独立的Network Namespace来隔离网络。当docker进程启动时，会在主机上创建一个名为docker0的虚拟网桥，此主机上的docker容器会链接到这个虚拟网桥上。虚拟网桥的工作方式和交换机类似，这样主机上的所有容器就通过交换机连接在了一个二层网络中。从docker0子网中分配一个IP给容器使用，并设置docker0的IP地址为容器的默认网关。
+
+- 当我们在Linux中安装docker后就会有一个docker0的网卡接口：
+
+```shell
+[root@CentOS-7 ~]# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 52:54:00:4d:77:d3 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global noprefixroute dynamic eth0
+       valid_lft 83457sec preferred_lft 83457sec
+    inet6 fe80::5054:ff:fe4d:77d3/64 scope link
+       valid_lft forever preferred_lft forever
+3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    link/ether 02:42:b6:b4:52:ec brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:b6ff:feb4:52ec/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+- 当我们启动一个虚拟机时，在宿主机上创建一对虚拟网卡veth pair 设备，Docker将veth pair设备的一端放在容器中，并命名为eth0(容器的网卡)，另一端放在主机中，以vethxxx这样的类似的名字命名，并将这个网络设备加入到docker网桥中。
+
+```shell
+/ # ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+8: eth0@if9: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue
+    link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+```
+
+在宿主机中是：
+
+```shell
+[root@CentOS-7 vagrant]# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 52:54:00:4d:77:d3 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global noprefixroute dynamic eth0
+       valid_lft 82424sec preferred_lft 82424sec
+    inet6 fe80::5054:ff:fe4d:77d3/64 scope link
+       valid_lft forever preferred_lft forever
+3: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
+    link/ether 02:42:b6:b4:52:ec brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:b6ff:feb4:52ec/64 scope link
+       valid_lft forever preferred_lft forever
+9: veth32a267d@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP group default
+    link/ether 6e:55:c7:46:a7:2d brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::6c55:c7ff:fe46:a72d/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+如果我们在创建一个容器：
+
+```shell
+/ # ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+8: eth0@if9: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue
+    link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+```
+
+这时宿主机的的IP网络接口则是：
+
+```shell
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 52:54:00:4d:77:d3 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.15/24 brd 10.0.2.255 scope global noprefixroute dynamic eth0
+       valid_lft 81828sec preferred_lft 81828sec
+    inet6 fe80::5054:ff:fe4d:77d3/64 scope link
+       valid_lft forever preferred_lft forever
+3: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
+    link/ether 02:42:b6:b4:52:ec brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:b6ff:feb4:52ec/64 scope link
+       valid_lft forever preferred_lft forever
+9: veth32a267d@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP group default
+    link/ether 6e:55:c7:46:a7:2d brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::6c55:c7ff:fe46:a72d/64 scope link
+       valid_lft forever preferred_lft forever
+11: veth97501d6@if10: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP group default
+    link/ether 62:45:a4:d7:81:c9 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet6 fe80::6045:a4ff:fed7:81c9/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+从上面的实验可以清楚地看到，docker为我们创建了默认的网络交接接口docker0这个网络接口相当于网络交换机，当我们创建容器时，宿主机就会为我们创建一个veth pair一个在宿主机的Network Namespace中，而另一个则分配给了容器的Network Namespace在容器中查看可以看到box01的eth0@if9对应的宿主机的9号网络接口，而box02的eth0@if11对应着宿主机的11号网络接口。先在对docker中的桥接模式有了非常直观清楚的认识了。我们来相互ping一下box01和box02。
+
+```shell
+box01
+/ # ping 172.17.0.3
+PING 172.17.0.3 (172.17.0.3): 56 data bytes
+64 bytes from 172.17.0.3: seq=0 ttl=64 time=0.096 ms
+64 bytes from 172.17.0.3: seq=1 ttl=64 time=0.129 ms
+64 bytes from 172.17.0.3: seq=2 ttl=64 time=0.130 ms
+box02
+/ # ping 172.17.0.2
+PING 172.17.0.2 (172.17.0.2): 56 data bytes
+64 bytes from 172.17.0.2: seq=0 ttl=64 time=0.117 ms
+64 bytes from 172.17.0.2: seq=1 ttl=64 time=0.091 ms
+64 bytes from 172.17.0.2: seq=2 ttl=64 time=0.091 ms
+```
+
+在docker的网络模式中处理默认的bridge桥接模式外还有host和null模式，当我们启动容器的时候使用host模式，那么容器中的网络接口和宿主机的网络接口一模一样，也就是说容器使用的就是宿主机的网络接口，所以在host模式下，不需要做端口映射，但是host模式很少使用了解一下即可。最后就是null模式，顾名思义null模式就是对外封闭的容器，即不需要对外访问，所以这种容器适合做一些批处理任务，一般也不常使用。
+
+2. ##### CGroup资源控制
+
+docker通过Cgroup来控制容器使用的资源配额，包括CPU、内存、磁盘三大方面， 基本覆盖了常见的资源配额和使用量控制。Cgroup是ControlGroups的缩写，是Linux内核提供的一种可以限制、记录、隔离进程组所使用的物理资源(如CPU、内存、磁盘IO等等) 的机制，被 LXC、docker 等很多项目用于实现进程资源控制。Cgroup 本身是提供将进程进行分组化管理的功能和接口的基础结构，I/O 或内存的分配控制等具体的资源管理是通过该功能来实现的。
+
+
