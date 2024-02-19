@@ -132,10 +132,10 @@ docker run -d --name elasticsearch_6.8.18 -p 9200:9200 -p 9300:9300 -v elasticse
 
 ### Docker高级篇
 
-Docker是基于Linux kernel中的namespace, CGroups, UnionFileSystem等技术封装成的一种自定义容器格式，从而提供一套容器运行时环境，Docker使用了Linux的Namespaces技术来进行资源隔离，如PID Namespace隔离进程，Mount Namespace隔离文件系统，Network Namespace隔离网络等：
+Docker是基于Linux kernel中的namespace, Cgroups, UnionFileSystem等技术封装成的一种自定义容器格式，从而提供一套容器运行时环境，Docker使用了Linux的Namespaces技术来进行资源隔离，如PID Namespace隔离进程，Mount Namespace隔离文件系统，Network Namespace隔离网络等：
 
 1. namespace用来隔离各种资源比如：pid(进程)，net(网络)，mnt(挂载点)；
-2. CGroups：Controller groups用来做资源限制比如：CPU，内存；
+2. Cgroups：Controller groups用来做资源限制比如：CPU，内存；
 3. UnionFileSystem：用来做image和Container分层。
 
 ##### 1. Network Namespace
@@ -433,8 +433,101 @@ PING 172.17.0.2 (172.17.0.2): 56 data bytes
 
 在docker的网络模式中处理默认的bridge桥接模式外还有host和null模式，当我们启动容器的时候使用host模式，那么容器中的网络接口和宿主机的网络接口一模一样，也就是说容器使用的就是宿主机的网络接口，所以在host模式下，不需要做端口映射，但是host模式很少使用了解一下即可。最后就是null模式，顾名思义null模式就是对外封闭的容器，即不需要对外访问，所以这种容器适合做一些批处理任务，一般也不常使用。
 
-2. ##### CGroup资源控制
+##### 2. Cgroup资源控制
 
-docker通过Cgroup来控制容器使用的资源配额，包括CPU、内存、磁盘三大方面， 基本覆盖了常见的资源配额和使用量控制。Cgroup是ControlGroups的缩写，是Linux内核提供的一种可以限制、记录、隔离进程组所使用的物理资源(如CPU、内存、磁盘IO等等) 的机制，被 LXC、docker 等很多项目用于实现进程资源控制。Cgroup 本身是提供将进程进行分组化管理的功能和接口的基础结构，I/O 或内存的分配控制等具体的资源管理是通过该功能来实现的。
+Docker容器技术底层是通过Cgroup(Control Group 控制组)实现容器对物理资源使用的限制，限制的资源包括CPU、内存、磁盘三个方面。基本覆盖了常见的资源配额和使用量控制。Cgroup 是Linux 内核提供的一种可以限制、记录、隔离进程组所使用的物理资源的机制，被LXC及Docker等很多项目用于实现进程的资源控制。Cgroup 是提供将进程进行分组化管理的功能和接口的基础结构，Docker中I/O 或内存的分配控制等具体的资源管理功能都是通过Cgroup功能来实现的。这些具体的资源管理功能称为Cgroup子系统，以下是对几大子系统的介绍。
+
+1. cpu资源限制：
+
+   docker允许用户为每个容器设置一个数字，代表容器的CPU share，默认情况下每个容器的share是1024。这个share是相对的，本身并不能代表任何确定的意义。当主机上有多个容器运行时，每个容器占用的CPU时间比例为它的share在总额中的比例。docker会根据主机上运行的容器和进程动态调整每个容器使用 CPU 的时间比例。比如：如果主机上有两个一直使用CPU的容器(为了简化理解，不考虑主机上其他进程)，其CPU share都是 1024，那么两个容器CPU使用率都是 50%；如果把其中一个容器的share设置为512，那么两者CPU的使用率分别为67%和33%；如果删除share为1024的容器，剩下来容器的CPU使用率将会是 100%。
+
+   `docker run --rm -it -c 512 progrium/stress --cpu 4`
+
+2. 限制cpu核数：
+
+   -c --cpu-shares 参数只能限制容器使用CPU的比例，或者说优先级，无法确定地限制容器使用CPU的具体核数；从1.13版本之后，docker提供了--cpus参数可以限定容器能使用的CPU核数。这个功能可以让我们更精确地设置容器CPU使用量，是一种更容易理解也因此更常用的手段。--cpus 后面跟着一个浮点数，代表容器最多使用的核数，可以精确到小数点二位，也就是说容器最小可以使用 0.01核 CPU。如果设置的--cpus值大于主机的CPU核数，docker会直接报错。如果多个容器都设置 --cpus ，并且它们之和超过主机的CPU核数，并不会导致容器失败或者退出，这些容器之间会竞争使用CPU，具体分配的CPU数量取决于主机运行情况和容器的CPU share值。也就是说--cpus只能保证在CPU资源充足的情况下容器最多能使用的CPU数，docker并不能保证在任何情况下容器都能使用这么多的CPU(因为这根本是不可能的)。
+
+   `docker run --rm -it --cpus 1.5 progrium/stress --cpu 3`
+
+3. cpu绑定：
+
+   限制容器运行在某些 CPU 核，一般并不推荐在生产中这样使用。docker允许调度的时候限定容器运行在哪个 CPU上。
+
+   `docker run --rm -it --cpuset-cpus=0,1 progrium/stress --cpu 2`
+
+4. 内存限制：docke 默认没有对容器内存进行限制，容器可以使用主机提供的所有内存。
+
+   - 不限制内存带来的问题：
+
+
+   这是非常危险的事情，如果某个容器运行了恶意的内存消耗软件，或者代码有内存泄露，很可能会导致主机内存耗尽，因此导致服务不可用。可以为每个容器设置内存使用的上限，一旦超过这个上限，容器会被杀死，而不是耗尽主机的内存。 
+
+   - 限制内存带来的问题：
+
+   限制内存上限虽然能保护主机，但是也可能会伤害到容器里的服务。如果为服务设置的内存上限太小，会导致服务还在正常工作的时候就被OOM杀死；如果设置的过大，会因为调度器算法浪费内存。
+
+   - 合理做法：
+
+   1. 为应用做内存压力测试，理解正常业务需求下使用的内存情况，然后才能进入生产环境使用。
+   2. 一定要限制容器的内存使用上限，尽量保证主机的资源充足，一旦通过监控发现资源不足，就进行扩容或者对容器进行迁移如果可以(内存资源充足的情况)。
+   3. 尽量不要使用 swap，swap 的使用会导致内存计算复杂，对调度器非常不友好。
+
+   docker 限制容器内存使用量:docker启动参数中，和内存限制有关的包括(参数的值一般是内存大小，也就是一个正数，后面跟着内存单位 b、k、m、g，分别对应 bytes、KB、MB、和 GB)。-m --memory：容器能使用的最大内存大小，最小值为 4m。如果限制容器的内存使用为64M，在申请64M资源的情况下，容器运行正常(如果主机上内存非常紧张，并不一定能保证这一点)。
+
+   `docker run --rm -it -m 64m progrium/stress --vm 1 --vm-bytes 64M --vm-hang 0`
+
+5. IO限制：docker支持限制bps和iops，其中bps是byte per second，每秒读写的数量，而iops是io per second，每秒IO的次数。目前docker只对direct IO (不使用文件缓存)有效。
+
+   可以同过下面的参数控制容器的bps和iops：
+
+   --device-read-bps:限制读某个设备的bps.
+   --devce-write-bps:限制写某个设备的bps.
+   --device-read-iops:限制读某个设备的iops.
+   --device-write-iops: 限制写某个设备的iops.
+   `docker run -it --device-write-bps /dev/sda:30MB ubuntu`
+
+
+
+##### 3. docker compose
+
+docker compose简单来将是使用yaml文件来管理和定义docker多容器的工具，根据docker compose的语法编写的yaml文件，然后使用docker compose up的命令就能运行yaml文件中定义好的docker容器。docker compose的使用步骤：
+
+1. 创建对应的Dockerfile；
+2. 创建yaml文件，在yaml中编排服务；
+3. 通过docker compose up一键运行我们定义好的服务。
+
+常用的docker compose的key有如下这些：
+
+- version：指定docker-compose yaml的文件版本，该版本信息描述了docker-compose语法与兼容的docker engine版本信息；
+- build：指定了用于构建的Dockerfile的信息，包括Dockerfile的文件名、构建参数、构建路劲上下文；
+- services：指定了当前docker-compose中的服务；
+- expose：指定了服务需要暴露的端口；
+- restart：重启策略，no表示不会重启，always表示服务出现异常导致终止后就会重启，该选项保证服务一直尝试重启，unless-stop表示服务正常退出后不再重启，on-failure表示服务异常退出后才会重启；
+- links：链接其他需要的服务，相当于在/etc/host中加上服务名和IP；
+- networks：服务需要加入的网络，相当于加入哪些Network bridge，需要提前创建；
+- volumes：指定服务需要的volumes信息，需要提前创建；
+
+docker-compose的常用命令：
+
+`docker-compose version`：查看docker-compose的版本信息；
+
+`docker-compose up`：启动当前路径下的服务，使用-f指定文件路劲，使用-d后台运行；
+
+`docker-compose ps`：查看当前yaml中服务的运行信息；
+
+`docker-compose image`：查看当前yaml中所有的image信息；
+
+`docker-compose start\stop`：启动或者停止yaml中的服务，不删除容器；
+
+`docker-compose down`：停止服务并删除容器所有资源；
+
+`docker-compose exec service sh`：进入当前某个服务
+
+
+
+
+
+
+
 
 
