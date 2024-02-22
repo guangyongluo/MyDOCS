@@ -42,7 +42,7 @@ Redis上帝视角：
 
 - 再从dictEntry到redisObject，我们可以这样来看，在Redis底层K-V字典中的元素被设计成了dictEntry但是对外暴露给客户端是使用的redisObject. 
 
-![redis_object_h](/Users/luowei/Documents/HBuilderProjects/MyDOCS/image/redis_object_h.jpeg)
+![redis_object_h](../image/redis_object_h.jpeg)
 
 - redisObject +Redis数据类型+Redis 所有编码方式(底层实现)三者之间的关系
 
@@ -56,7 +56,7 @@ Redis上帝视角：
 
 - 看看编码：object encoding hello
 
-![redis_type_encoding](/Users/luowei/Documents/HBuilderProjects/MyDOCS/image/redis_type_encoding.jpeg)
+![redis_type_encoding](../image/redis_type_encoding.jpeg)
 
 ##### redisObject结构的作用
 
