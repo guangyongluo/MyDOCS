@@ -107,14 +107,24 @@ SOLID是五个面向对象的设置原则的首字母，这些设计原则建立
 
 在程序运行时，对于一个类的引用有且只有一个实例，我们称这样的实例成为单例。在实际的开发中有很多这样的例子比如：数据库连接池，线程池，工具类库中的工具类等；单例模式是设计模式中最简单的模式之一。通常，普通类的构造函数是公有的，外部类可以通过“new 构造函数()”来生成多个实例。但是，如果将类的构造函数设为私有的，外部类就无法调用该构造函数，也就无法生成多个实例。这时该类自身必须定义一个静态私有实例，并向外提供一个静态的公有函数用于创建或获取该静态私有实例。
 
-- 饿汉模式：在class被加载到内存就初始化单例实例，JVM保证了所有class只会被加载到内存一次，这样的实现方式大多数情况下适用，同时写法相对简单容易理解；
+- 饿汉模式：在class被加载到内存的同时初始化单例实例，JVM保证了所有class只会被加载到内存一次，这样的实现方式大多数情况下适用，而且写法相对简单容易理解，这里需要简单地回顾JVM类的加载过程：
+
+  1. 加载二进制到内存中，生成对应的Class数据结构；
+  2. 连接阶段：a.验证(验证加载的class二进制是否符合JVM规范) b.准备(给内的静态成员变量赋初始值，这里的静态成员变量如果是Java的8大基本数据类型，将会赋一个默认值比如int类型会赋值0，如果是引用类型将会赋null)  c.解析(将常量池中的符号引用转换为直接引用)；
+  3. 初始化：给类的静态成员赋初值，这里的静态成员是指引用类型对象。
+
+  只有在真正使用对应类的时候，才会初始化，比如：启动类即main函数所在的类，直接进行new操作，访问静态属性，访问静态方法，使用反射访问类文件，初始化一个类的子类时发现没有该类对应的class信息，JVM就会加载这个类。
 
 ```java
 class HungrySingleton {
   
   private static HungrySingleton hungrySingleton = new HungrySingleton();
   
-  private HungrySingleton(){}
+  private HungrySingleton(){
+    if(SingletonHolder.innerClassSingleton != null){
+      throw RuntimeException("单例不允许使用反射来创建实例");
+    }
+  }
   
   public static HungrySingleton getInstance(){
     return this.hungrySingleton;
@@ -152,18 +162,17 @@ class LazySingleton {
 }
 ```
 
-静态内部类实现的懒汉模式单例，由于静态内部类是在使用的时候由JVM来保证单次加载的，同时也是线程安全的。这里需要简单地回顾JVM类的加载过程：
+- 静态内部类实现的饿汉模式单例，由于静态内部类是在使用的时候由JVM来保证单次加载的，同时也是线程安全的。只有当我们调用InnerClassSingleton.getInstance()时JVM才会加载InnerClassSingleton的Class文件，该方法中返回了SingletonHodler.innerClassSingleton，JVM又会加载SingletonHolder这个Class文件。同时JVM保证了Class只被加载一次。这种方式加载不需要考虑线程安全问题，本质上也是利用了类加载机制来保证线程安全，跟恶汉式的实现原理类似。
 
-1. 加载二进制到内存中，生成对应的Class数据结构；
-2. 连接阶段：a.验证 b.准备(给内的静态成员变量赋初始值) c.解析
-3. 初始化：给类的静态成员赋初值
-
-只有在真正使用对应类的时候，才会初始化，当前是启动类所在的类，直接进行new操作，访问静态属性，访问静态方法，使用反射访问类文件，初始化一个类的子类等；
 
 ```java
 class InnerClassSingleton {
 
-  private InnerClassSingleton(){}
+  private InnerClassSingleton(){
+    if(SingletonHolder.innerClassSingleton != null){
+      throw RuntimeException("单例不允许使用反射来创建实例");
+    }
+  }
   
   private static class SingletonHolder{
     private static InnerClassSingleton innerClassSingleton = new InnerClassSingleton();
@@ -175,9 +184,9 @@ class InnerClassSingleton {
 }
 ```
 
-如果使用反射来new对象可以攻击单例的实现，如果是饿汉模式或者是静态内部类可以在构造方法中加一个判断来防止单例模式实现产生多个实例，但是如果是懒汉模式就无法防止反射的攻击。
+如果使用反射可以得到私有构造函数后使用newInstance来new对象，这样就可以生成多个该类的实例对象，这就造成了单例类可以生成多个实例。如果是饿汉模式或者是静态内部类可以在构造方法中加一个判断来防止使用反射操作单例模式的构造方法产生多个实例，但是如果是懒汉模式，由于懒汉模式的成员变量没有用静态来修饰，其实加不加这个判断成员变量永远是null，就无法防止反射的攻击。
 
-使用enum来实现单例，JVM来保证静态代码块来初始化enum的元素所以是线程安全的，同时enum类型不支持反射，而且如果使用反序列化也不需要进行特殊的处理来保证单例的实施。
+使用enum来实现单例，通过查看enum的反编译文件可以知道enum使用静态代码块来初始化所有的成员，同时JVM类加载保证静态代码块只执行一次和线程安全，最后enum类型不支持反射来通过newInstance类new该类的实例对象。需要注意的是Java还有一个序列化和反序列化的功能，主要的应用场景是当我们的实例需要网络传输或者持久化时，可以使用Java的序列化将实例转换成一个二进制序列的表示，然后通过网络传输到目标地址或者直接存储在磁盘上，需要使用该实例时只需反序列化就可以得到实例对象了。所有需要序列化的类都需要实现Serializable接口，这个接口其实是个标记接口没有任何抽象方法。所以通过序列化和反序列化可以破坏单例模式，这里首先要提的是serialVersionUID，我们在代码中经常看到这个成员变量，它到底是做什么的？为了保证序列化和反序列化的版本兼容性，在实现了Serializable接口的类都需要设置一个serialVersionUID版本号，如果你不指定的话Java会根据类的成员变量和成员方法的数据来生成一个serialVersionUID版本号保持在序列化的二机制里，在反序列化的时候也会根据生成的成员变量和成员方法生成一个serialVersionUID再跟之前序列化保存的版本号对比，如果不一样就说明被更改过滤JVM就会抛异常。在Serializable接口说明中提到，可以使用readResovle()方法来直接返回反序列化的对象，这样对于单例来讲又可以做一个增强即所有实现了Serializable接口的类中，都添加一个readResovle()来返回单例即可。
 
 ```java
 public enum EnumSingleton {
