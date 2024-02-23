@@ -69,7 +69,7 @@ Redis上帝视角：
 - 4位的type表示具体的数据类型 (String, Set, Zset, Hash, Stream)
 - 4位的encoding表示该类型的物理编码方式，同一种数据类型可能有不同的编码方式。(比如String就提供了3种:int embstr raw)
 
-![redis_encoding_type](/Users/luowei/Documents/HBuilderProjects/MyDOCS/image/redis_encoding_type.jpeg)
+![redis_encoding_type](../image/redis_encoding_type.jpeg)
 
 - lru字段表示当内存超限时采用LRU算法清除内存中的对象。
 
@@ -115,7 +115,7 @@ Redis没有直接复用C语言的字符串，而是新建了属于自己的结�
 
 - 说明
 
-  [![img](https://github.com/Romantic-Lei/Learning-in-practice/raw/master/Redis/12.Redis%E9%AB%98%E9%98%B6%E7%AF%87/11.Redis%E7%BB%8F%E5%85%B8%E4%BA%94%E5%A4%A7%E7%B1%BB%E5%9E%8B%E6%BA%90%E7%A0%81%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0/images/32%E8%AF%B4%E6%98%8E.jpg)](https://github.com/Romantic-Lei/Learning-in-practice/blob/master/Redis/12.Redis高阶篇/11.Redis经典五大类型源码及底层实现/images/32说明.jpg)
+  ![redis_sds_illustrate](../image/redis_sds_illustrate.jpeg)
 
   - Redis中字符串的实现,SDS有多种结构( sds.h) : sdshdr5、(2^5=32byte)，但是不会使用，是redis团队内部测试使用 sdshdr8、(2^8=256byte) sdshdr16、(2^16=65536byte=64KB) sdshdr32、(2 ^32byte=4GB) sdshdr64，2的64次方byte=17179869184G用于存储不同的长度的字符串。
 
@@ -143,7 +143,7 @@ Redis没有直接复用C语言的字符串，而是新建了属于自己的结�
 
   EMBSTR编码格式
 
-  ![redis_embstr](/Users/luowei/Documents/HBuilderProjects/MyDOCS/image/redis_embstr.png)
+  ![redis_embstr](../image/redis_embstr.png)
 
   对于长度小于 44的字符串，Redis 对键值采用OBJ_ENCODING_EMBSTR 方式，EMBSTR 顾名思义即: embedded string，表示嵌入式的String。从内存结构上来讲即字符串sds结构体与其对应的redisObject对象分配在同一块连续的内存空间，字符串sds嵌入在redisObiect对象之中一样。
 
