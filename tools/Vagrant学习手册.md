@@ -73,7 +73,7 @@ end
 ```ruby
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/jammy64"
-  config.vm.box_url = "file://tmp/CentOS-7-x86_64-Vagrant-2004_01.VirtualBox.box"
+  config.vm.box_url = "file:///tmp/CentOS-7-x86_64-Vagrant-2004_01.VirtualBox.box"
 end
 ```
 
@@ -404,8 +404,8 @@ end
 vm_list = [
   { # hash map
     "name" => "node-1",
-    "cpu" => "2",
-    "mem" => "2048",
+    "cpu" => "1",
+    "mem" => "1024",
     "ip_addr" => "192.168.56.10"
   },
   {
@@ -497,7 +497,7 @@ Vagrant.configure(2) do |config|
 
             # 执行shell脚本
             node.vm.provision "shell" do |script|
-              script.path = "k3s-install.sh"   #脚本路径
+              script.path = "k3s_install.sh"   #脚本路径
               script.args = [ item["name"] ]   #传递参数
             end
         end
@@ -524,8 +524,8 @@ K3s内置了`flannel`作为默认的网络插件(CNI)。`flannel`默认是选择
 
 ```shell
 echo "==> k3s cluster settings:"
-K3S_TOKEN=NEIwQ0IxMEUtNTA2MS00RE
-K3S_URL=https://192.168.56.10:6443
+TOKEN=NEIwQ0IxMEUtNTA2MS00RE
+API_SERVER="192.168.56.10"
 FLANNEL_IFACE="enp0s8"
 echo "    TOKEN: ${TOKEN}"
 echo "    API_SERVER:${API_SERVER}"
