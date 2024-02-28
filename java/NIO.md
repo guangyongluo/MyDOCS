@@ -129,3 +129,135 @@ buffer.get(); // read a from from buffer
     log.debug("decode byte buffer3 : {}", decode3);
 ```
 
+5. scattering read与gathering write：理解分散读取和集中写入的思想，对于理解Netty源码很重要。
+
+```java
+    //------------scattering read---------------
+    ByteBuffer buffer1 = ByteBuffer.allocate(3);
+    ByteBuffer buffer2 = ByteBuffer.allocate(3);
+    ByteBuffer buffer3 = ByteBuffer.allocate(5);
+
+    channel.read(new ByteBuffer[]{buffer1, buffer2, buffer3});
+
+    //------------scattering read---------------
+```
+
+6. 解决网络packet fragmentation问题，后面会有更好的办法来处理黏包和半包问题。
+
+```java
+public class ByteBufferPackageHandler {
+
+  public static void main(String[] args) {
+    ByteBuffer source = ByteBuffer.allocate(32);
+
+    source.put("Hello,world\nI'm zhangsan\nHo".getBytes());
+    split(source);
+
+    source.put("w are you?\nhaha!\n".getBytes());
+    split(source);
+  }
+
+  /**
+   * handle the packet fragmentation in the network communications
+   * @param source : network packet mock.
+   */
+  private static void split(ByteBuffer source) {
+    source.flip();
+
+    for(int i = 0; i < source.limit(); i++){
+
+      if (source.get(i) == '\n') {
+
+        int length = i + 1 - source.position();
+
+        ByteBuffer target = ByteBuffer.allocate(length);
+
+        for(int j = 0; j < length; j++){
+          target.put(source.get());
+        }
+
+        debugAll(target);
+      }
+    }
+
+
+    source.compact();
+  }
+}
+```
+
+##### NIO文件编程
+
+FileChannel是对一个文件读，写，映射，操作的Channel。FileChannel是线程安全的，可以被多个线程并发使用。同一个进程中的多个FileChannel看到的同一个文件的视图是相同的，由于底层操作系统执行的缓存和网络文件系统协议引起的延迟，不同进程中在同一时间看到的文件视图可能会不同。
+
+##### FileChannel的创建
+
+获取FileChannel的方式有下面四种
+
+- FileChannel.open()直接调用FileChannel的open()方法，传入Path即可获得FileChannel。
+
+```java
+// 直接传入Path默认是只读FileChannel
+FileChannel fileChannel = FileChannel.open(Path.of("./tmp/test.txt"));
+// 和直接传入Path相比，支持传入OpenOption数组
+FileChannel channel = FileChannel.open(Path.of("./tmp/test.txt"), StandardOpenOption.WRITE);
+```
+
+OpenOption是一个空接口，我们可以传入StandardOpenOption枚举，StandardOpenOption有如下值：
+
+```java
+public enum StandardOpenOption implements OpenOption {
+		// 可读Channel
+    READ,
+		// 可写Channel
+    WRITE,
+		// 如果Channel是可写(WRITE)的，缓冲中的数据会从文件末尾开始写，而不是从头开始写
+    APPEND,
+		// 如果Channel是可写(WRITE)的，文件的长度会被置为0
+    TRUNCATE_EXISTING,
+		// 如果文件不存在，则会创建一个新的文件，如果配置了CREATE，则CREATE_NEW会失效
+    CREATE,
+		// 创建换一个新的文件，如果文件已经存在，则会失败
+    CREATE_NEW,
+		// Channel关闭时删除
+    DELETE_ON_CLOSE,
+		// 稀疏文件
+    SPARSE,
+		// 要求对文件内容或元数据的每次更新都同步写入基础存储设备。
+    SYNC,
+		// 要求对文件内容的每次更新都同步写入基础存储设备。
+    DSYNC;
+}
+```
+
+- FileInputStream.getChannel()通过FileInputStream的getChannel()方法获取FileChannel，FileInputStream创建的FileChannel不可写，只能读：
+
+```java
+FileInputStream fileInputStream = new FileInputStream("./tmp/test.txt");
+FileChannel fileChannel = fileInputStream.getChannel();
+```
+
+- FileOutputStream.getChannel()通过FileOutputStream的getChannel()方法获取FileChannel，FileOutputStream创建FileChannel不可读，只能写：
+
+```java
+FileOutputStream fileInputStream = new FileOutputStream("./tmp/test.txt");
+FileChannel fileChannel = fileInputStream.getChannel();
+```
+
+- RandomAccessFile.getChannel()通过RandomAccessFile的getChannel()方法获取FileChannel：
+
+```java
+RandomAccessFile file = new RandomAccessFile("./tmp/test.txt", "rw");
+FileChannel fileChannel = file.getChannel();
+```
+
+RandomAccessFile中的模式与OutputStream和InputStream不同的是创建RandomAccessFile需要传入模式，RandomAccessFile的模式也会影响到FileChannel，创建RandomAccessFile可以传入的模式有下面4种：
+
+1. r：只读模式，创建的RandomAccessFile只能读，如果使用只读的RandomAccessFile创建的FileChannel写数据会抛出NonWritableChannelException
+
+2. rw：读写模式，创建的RandomAccessFile即可读，也可写
+
+3. rws：与rw一样，打开以进行读取和写入，并且还要求对文件内容或元数据的每次更新同步写入基础存储设备
+
+4. rwd：与rw一样，打开以进行读取和写入，并且还要求对文件内容的每次更新都同步写入底层存储设备
+   
