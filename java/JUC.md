@@ -251,9 +251,69 @@ CompletableFuture优点：
 
   - handle ：计算结果存在依赖关系，这两个线程串行化，有异常也可以往下走一步,
 
+```java
+public class CompletableFutureApiDemo1 {
+  public static void main(String[] args) throws ExecutionException, InterruptedException, TimeoutException {
+    ExecutorService threadPool = Executors.newFixedThreadPool(3);
+    CompletableFuture<Integer> completableFuture = CompletableFuture.supplyAsync(() -> {
+      try {
+        TimeUnit.SECONDS.sleep(1);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      return 1;
+    }, threadPool).thenApply(f -> {
+      log.debug("step 2");
+      return f + 2;
+    }).handle((f, e) -> {
+      log.debug("step 3");
+      int i=10/0;
+      return f + 2;
+
+//             thenApply(f -> {
+//            System.out.println("step 3");
+//            return f + 2;
+    }).whenComplete((v, e) -> {
+      if (e == null) {
+        log.debug("calculate result : " + v);
+      }
+    }).exceptionally(e -> {
+      log.error(Arrays.toString(e.getStackTrace()));
+      return null;
+    });
+
+    threadPool.shutdown();
+    log.debug("{}------主线程先去做其他事情", Thread.currentThread().getName());
+  }
+}
+```
+
+
+
 - **对计算结果进行消费**
 
   - thenAccept：接受任务的处理结果，并消费处理，无返回结果
+
+  ```java
+  public class CompletableFutureApiDemo2 {
+    public static void main(String[] args) {
+      ExecutorService threadPool = Executors.newFixedThreadPool(3);
+      CompletableFuture.supplyAsync(() -> {
+        return 1;
+      }, threadPool).thenApply(f -> {
+        return f + 2;
+      }).thenApply(f -> {
+        return f + 2;
+      }).thenAccept(r -> {
+        log.debug("result = {}", r);//5
+      });
+  
+      threadPool.shutdown();
+    }
+  }
+  ```
+
+  
 
   - 对比补充
 
@@ -262,6 +322,18 @@ CompletableFuture优点：
     - thenAccept(Consumer action): 任务A执行完执行B，B需要A的结果，但是任务B没有返回值
 
     - thenApply(Function fn): 任务A执行完执行B，B需要A的结果，同时任务B有返回值
+
+  ```java
+  public class CompletableFutureApiDemo3 {
+    public static void main(String[] args) {
+      System.out.println(CompletableFuture.supplyAsync(() -> "result").thenRun(() -> {}).join()); //null
+      System.out.println(CompletableFuture.supplyAsync(() -> "result").thenAccept(r -> System.out.println(r)).join()); //result null
+      System.out.println(CompletableFuture.supplyAsync(() -> "result").thenApply(f -> f + 2).join()); //result2
+    }
+  }
+  ```
+
+  
 
   - CompletableFuture和线程池说明
 
@@ -278,8 +350,88 @@ CompletableFuture优点：
 - **对计算速度进行选用**
   - applyToEither：谁快用谁
 
+```java
+public class CompletableFutureApiDemo4 {
+  public static void main(String[] args) {
+    ExecutorService threadPool = Executors.newFixedThreadPool(3);
+    CompletableFuture<String> playA = CompletableFuture.supplyAsync(() -> {
+      try {
+        log.debug("A come in");
+        TimeUnit.SECONDS.sleep(2);
+      } catch (InterruptedException e) {
+        log.error(Arrays.toString(e.getStackTrace()));
+      }
+      return "playA";
+    }, threadPool);
+
+
+    CompletableFuture<String> playB = CompletableFuture.supplyAsync(() -> {
+      try {
+        log.debug("B come in");
+        TimeUnit.SECONDS.sleep(3);
+      } catch (InterruptedException e) {
+        log.error(Arrays.toString(e.getStackTrace()));
+      }
+      return "playB";
+    }, threadPool);
+
+    CompletableFuture<String> result = playA.applyToEither(playB, f -> {
+      return f + " is winner";
+    });
+
+    threadPool.shutdown();
+
+    /**
+     * A come in
+     * B come in
+     * main-----------winner:playA is winner
+     */
+    log.debug("{}-----------winner: {}", Thread.currentThread().getName(), result.join());
+  }
+}
+```
+
+
+
 - **对计算结果进行合并**
 
   - 两个CompletableStage任务都完成后，最终能把两个任务的结果一起交给thenCombine来处理
 
   - 先完成的先等着，等待其他分支任务
+
+```java
+public class CompletableFutureApiDemo5 {
+
+  public static void main(String[] args) {
+    CompletableFuture<Integer> completableFuture1 = CompletableFuture.supplyAsync(() -> {
+      log.debug("{} start", Thread.currentThread().getName());
+      try {
+        TimeUnit.SECONDS.sleep(1);
+      } catch (InterruptedException e) {
+        log.error(Arrays.toString(e.getStackTrace()));
+      }
+      return 10;
+    });
+
+    CompletableFuture<Integer> completableFuture2 = CompletableFuture.supplyAsync(() -> {
+      log.debug("{} start", Thread.currentThread().getName());
+      try {
+        TimeUnit.SECONDS.sleep(2);
+      } catch (InterruptedException e) {
+        log.error(Arrays.toString(e.getStackTrace()));
+      }
+      return 20;
+    });
+
+    CompletableFuture<Integer> finalResult = completableFuture1.thenCombine(completableFuture2,
+        (x, y) -> {
+          System.out.println("----------merge two completable future results...");
+          return x + y;
+        });
+    log.debug("result = {}", finalResult.join());
+
+  }
+}
+```
+
+### 3. 线程池源码分析
