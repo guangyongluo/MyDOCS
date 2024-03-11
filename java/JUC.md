@@ -1353,6 +1353,140 @@ JDK提供的CAS机制，在汇编层级会禁止变量两侧的指令优化，�
 
 ##### CAS底层原理--Unsafe类
 
-Unsafe类是CAS的核心类，由于Java方法无法直接访问底层系统，需要通过本地（native）方法来访问，Unsafe相当于一个后门，基于该类可以直接操作特定内存数据。Unsafe类存在于sun.misc包中，其内部方法操作可以像C的指针一样直接操作内存，因此Java中CAS操作的执行依赖于Unsafe类的方法。注意：Unsafe类中的所有方法都是native修饰的，也就是说Unsafe类中的所有方法都直接调用操作系统底层资源执行相应任务。
+Unsafe类是CAS的核心类，由于Java方法无法直接访问底层系统，需要通过本地（native）方法来访问，Unsafe相当于一个后门，基于该类可以直接操作特定内存数据。Unsafe类存在于sun.misc包中，其内部方法操作可以像C的指针一样直接操作内存，因此Java中CAS操作的执行依赖于Unsafe类的方法。注意：Unsafe类中的所有方法都是native修饰的，也就是说Unsafe类中的所有方法都直接调用操作系统底层资源执行相应任务。问题：我们知道i++是线程不安全的，那AtomicInteger.getAndIncrement()如何保证原子性？AtomicInteger类主要利用CAS+volatile和native方法来保证原子操作，从而避免synchronized的高开销，执行效率大为提升。
 
 CAS并发原语体现在Java语言中就是sun.misc.Unsafe类中的各个方法。调用Unsafe类中的CAS方法，JVM会帮我们实现出CAS汇编指令。这是一种完全依赖于硬件的功能，通过它实现了原子操作。再次强调，由于CAS是一种系统原语，原语属于操作系统用语范畴，是由若干条指令组成的，用于完成某个功能的一个过程，并且原语的执行必须是连续的，在执行过程中不允许被中断，也就是说CAS是一条CPU的原子指令，不会造成所谓的数据不一致问题。
+
+##### 原子引用 AtomicReference
+
+```java
+public class AtomicReferenceDemo {
+  public static void main(String[] args) {
+    AtomicReference<User> atomicReference = new AtomicReference<>();
+    User z3 = new User("z3", 22);
+    User li4 = new User("li4", 25);
+
+    atomicReference.set(z3);
+    System.out.println(atomicReference.compareAndSet(z3, li4) + "\t" + atomicReference.get().toString());//true	User(userName=li4, age=25)
+    System.out.println(atomicReference.compareAndSet(z3, li4) + "\t" + atomicReference.get().toString());//false	User(userName=li4, age=25)
+
+  }
+}
+
+@Data
+@AllArgsConstructor
+class User {
+  String userName;
+  int age;
+}
+```
+
+##### CAS与自旋锁
+
+CAS是实现自旋锁的基础，CAS利用CPU指令保证了操作的原子性，以达到锁的效果，至于自旋锁---字面意思自己旋转。是指尝试获取锁的线程不会立即阻塞，而是采用循环的方式去尝试获取锁，当线程发现锁被占用时，会不断循环判断锁的状态，直到获取。这样的好处是减少线程上下文切换的消耗，缺点是循环会消耗CPU。尝试自己实现自旋锁：
+
+```java
+public class SpinLockDemo {
+
+  AtomicReference<Thread> atomicReference = new AtomicReference<>();
+  public void lock() {
+    Thread thread = Thread.currentThread();
+    System.out.println(Thread.currentThread().getName() + "\t --------come in");
+    while (!atomicReference.compareAndSet(null, thread)) {
+
+    }
+  }
+
+  public void unLock() {
+    Thread thread = Thread.currentThread();
+    atomicReference.compareAndSet(thread, null);
+    System.out.println(Thread.currentThread().getName() + "\t --------task over,unLock.........");
+  }
+
+  public static void main(String[] args) {
+    SpinLockDemo spinLockDemo = new SpinLockDemo();
+    new Thread(() -> {
+      spinLockDemo.lock();
+      try {
+        TimeUnit.SECONDS.sleep(5);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      spinLockDemo.unLock();
+    }, "A").start();
+
+
+    try {
+      TimeUnit.MILLISECONDS.sleep(500);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    new Thread(() -> {
+      spinLockDemo.lock();
+      spinLockDemo.unLock();
+    }, "B").start();
+  }
+}
+```
+
+##### CAS缺点
+
+1. 循环时间长开销很大：如果CAS失败，会一直进行尝试，如果CAS长时间一直不成功，可能会给CPU带来很大开销；
+2. CAS算法实现一个重要前提需要提取出内存中某时刻的数据并在当下时刻比较并替换，那么在这个时间差类会导致数据的变化；比如说一个线程1从内存位置V中取出A，这时候另一个线程2也从内存中取出A，并且线程2进行了一些操作将值变成了B，然后线程2又将V位置的数据变成A，这时候线程1进行CAS操作发现内存中仍然是A，预期ok，然后线程1操作成功--------尽管线程1的CAS操作成功，但是不代表这个过程就是没有问题的。
+
+### 10. 原子操作类
+
+##### 基本类型原子类
+
+- `AtomicInteger`：整型原子类
+- `AtomicBoolean`：布尔型原子类
+- `AtomicLong`：长整型原子类
+
+常用API：
+
+```java
+public final int get() //获取当前的值
+public final int getAndSet(int newValue)//获取当前的值，并设置新的值
+public final int getAndIncrement()//获取当前的值，并自增
+public final int getAndDecrement() //获取当前的值，并自减
+public final int getAndAdd(int delta) //获取当前的值，并加上预期的值
+boolean compareAndSet(int expect, int update) //如果输入的数值等于预期值，则以原子方式将该值设置为输入值（update）
+public final void lazySet(int newValue)//最终设置为newValue,使用 lazySet 设置之后可能导致其他线程在之后的一小段时间内还是可以读到旧的值。
+```
+
+##### 数组类型原子类
+
+- `AtomicIntegerArray`：整型数组原子类
+- `AtomicLongrArray`：长整型数组原子类
+- `AtomicReferenceArray`：用类型数组原子类
+
+常用API：
+
+```java
+public final int get(int i) //获取 index=i 位置元素的值
+public final int getAndSet(int i, int newValue)//返回 index=i 位置的当前的值，并将其设置为新值：newValue
+public final int getAndIncrement(int i)//获取 index=i 位置元素的值，并让该位置的元素自增
+public final int getAndDecrement(int i) //获取 index=i 位置元素的值，并让该位置的元素自减
+public final int getAndAdd(int i, int delta) //获取 index=i 位置元素的值，并加上预期的值
+boolean compareAndSet(int i, int expect, int update) //如果输入的数值等于预期值，则以原子方式将 index=i 位置的元素值设置为输入值（update）
+public final void lazySet(int i, int newValue)//最终 将index=i 位置的元素设置为newValue,使用 lazySet 设置之后可能导致其他线程在之后的一小段时间内还是可以读到旧的值。
+```
+
+##### 引用类型原子类
+
+- `AtomicReference` :引用类型原子类。
+- `AtomicStampedReference`：原子更新带有版本号的引用类型。该类将整数值与引用关联起来，可用于解决原子的更新数据和数据的版本号，可以解决使用 CAS 进行原子更新时可能出现的 ABA 问题。**解决修改过几次**。
+
+- `AtomicMarkableReference`：原子更新带有标记的引用类型。该类将 boolean 标记与引用关联起来，**解决是否修改过，它的定义就是将标记戳简化为true/false，类似于一次性筷子**。
+
+##### 对象的属性修改原子类
+
+- `AtomicIntegerFieldUpdater`：原子更新对象中int类型字段的值；
+- `AtomicLongFieldUpdater`：原子更新对象中Long类型字段的值；
+- `AtomicReferenceFieldUpdater`：原子更新对象中引用类型字段的值。
+
+以一种线程安全的方式操作非线程安全对象内的某些字段：
+
+- 更新的对象属性必须使用public volatile修饰符；
+- 因为对象的属性修改类型原子类都是抽象类，所以每次使用都必须使用静态方法newUpdater()创建一个更新器，并且需要设置想要更新的类和属性。
