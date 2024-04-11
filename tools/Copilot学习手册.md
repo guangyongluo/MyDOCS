@@ -16,7 +16,7 @@ Github Copilot主要的形态是以编辑器插件的形式存在的，是有Git
 
 首先GitHub Copilot的命令都是以/开头，并且当你输入/时有提示符：
 
-![image-20240410143850450](..\image\github_copilot.png)
+![github_copilot](..\image\github_copilot.png)
 
 /tests：生成测试用例；
 
@@ -69,3 +69,7 @@ Github Copilot不仅仅是直接调用了Open AI的大语言模型，而是在ID
 6. 不要花费过多时间在如何写代码注释上，Copilot提示的效果不好的时候，可以忽略当前提示的内容，自己写一段代码，之后就会就好了
 7. Copilot的定位是个更好用的编程工具，而不是代替开发者思考
 8. 使用原则：观察，思考，接受，验证，修改
+
+### 6. 如果修复代码
+
+可以使用GitHub Copilot Chat来输入问题，比如：这段代码有什么问题，该如何解决？如果你选中了一段代码，那么GitHub Copilot会以这段代码为上下文来回答。如果你没有选中则就使用屏幕中所有的代码作为上下文。
