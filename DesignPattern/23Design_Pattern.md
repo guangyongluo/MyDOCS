@@ -206,7 +206,7 @@ public enum EnumSingleton {
 
 ### 3. 建造者设计模式 Builder
 
-建造者设计模式：将一个复杂对象的创建于它的表示分离，使得同样的构建过程可以创建不同的表示。通常建造者模式主要应用在需要复杂的构造过程的对象创建时，定义一个创建对象的接口，然后定义创建对象的具体实现，由Director指导对象的创建过程。大多数场景中不需要这么复杂的创建过程，一般使用一个建造者设计模式的变种类似于lombok中的builder实现。
+建造者设计模式：将一个复杂对象的创建与它的表示分离，使得同样的构建过程可以创建不同的表示。通常建造者模式主要应用在需要复杂构造过程的对象创建时，由于创建对象需要很多步骤，而且步骤的顺序又不相同，这样的场景非常适合使用构造者模式来创建对象。大多数场景中不需要这么复杂的创建过程，一般使用一个建造者设计模式的变种类似于lombok中的builder实现。
 
 ```java
 public class Product{
@@ -245,9 +245,65 @@ public class Product{
 }
 ```
 
+建造者模式的有点：
+
+1. 封装性好，创建和使用分离；
+2. 扩展性好，构造类之间独立、一定程度上解耦。
+
+缺点也很明显：
+
+1. 使用Builder来创建对象，增加了创建对象的成本；
+2. 如果类发生改变，那么建造者也得跟着改变来创建所需的对象。
+
+建造者模式与工厂模式的区别：
+
+1. 建造者模式更加注重方法的调用顺序，工厂模式注重于创建对象；
+2. 创建对象的粒度不同，建造者创建复杂的对象，由各种复杂的部件组成，工厂模式创建出来的都一样；
+
 ### 4. 原型设计模式 Prototype
 
-原型设计模式：指原型实例指定创建对象的种类，并且通过拷贝这些原型创建新的对象。在JDK中使用Object.clone()方法来浅拷贝对象，需要注意的是在使用clone方法时，需要实现Clonable接口，该接口是一个标记接口，旨在JVM运行时指定是否可以运行clone()方法,，而且需要覆盖Object的clone()方法。
+原型设计模式：指原型实例指定创建对象的种类，并且通过拷贝这些原型创建新的对象。在JDK中使用Object.clone()方法来浅拷贝对象，需要注意的是在使用clone方法时，需要实现Clonable接口，该接口是一个标记接口，旨在JVM运行时指定是否可以运行clone()方法。
+
+原型设计模式的适用场景：
+
+1. 类初始化消耗资源较多；
+2. new产生一个对象需要非常繁琐的过程；
+3. 构造函数比较复杂；
+
+使用Object.clone()方法来克隆对象比直接使用new来创建对象的效率要高，我们查看Object.clone的源码会发现，clone是一个native的方法，JDK底层使用基于二进制流来实现对象的克隆，对比new一个新的对象效率更高。
+
+```java
+protected native Object clone() throws CloneNotSupportedException;
+```
+
+但是使用Object.clone的最大的问题就是对于有引用类型的属性对象的克隆是浅克隆，浅克隆是指对于引用属性不会创建新的对象，还是直接拷贝的原来的引用所以在更新引用类型属性时，将更新所有克隆出来的对象。如果要使用深克隆需要自己实现一个deepClone方法，注意：不要重写clone方法，这样会违背里式替换原则。一种简单的深克隆方式可以使用Java的对象序列化来实现：
+
+```java
+public ConcretePrototype deepClone(){
+		try(ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(bos)){
+			oos.writeObject(this);
+
+			ByteArrayInputStream ios = new ByteArrayInputStream(bos.toByteArray());
+			ObjectInputStream ois = new ObjectInputStream(ios);
+			ConcretePrototype o = (ConcretePrototype)ois.readObject();
+			return o;
+		} catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+```
+
+原型模式的缺点是：
+
+1. 要使用原型模式必须实现clonable接口，该接口并没有需要实现的抽象方法，只是一个标记接口当对象需要使用克隆方法时，JDK会检查是否实现该接口，否则会抛异常；
+2. 如果需要实现深克隆必须考虑类中引用属性的修改，这违背了开闭原则；
+
+### 5. 代理设计模式 Proxy
+
+代理模式是为对象提供一个代理，以控制对这个对象的访问，代理对象在客户端和目标对象之间起到中介的作用，
 
 ### 5. 享元设计模式 Flyweight
 
