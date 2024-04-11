@@ -16,7 +16,7 @@ Github Copilot主要的形态是以编辑器插件的形式存在的，是有Git
 
 首先GitHub Copilot的命令都是以/开头，并且当你输入/时有提示符：
 
-![github_copilot](..\image\github_copilot.png)
+![github_copilot](../image/github_copilot.png)
 
 /tests：生成测试用例；
 
@@ -34,7 +34,7 @@ Github Copilot主要的形态是以编辑器插件的形式存在的，是有Git
 
 ### 4. Github Copilot的原理
 
-![github_copilot_concept](..\image\github_copilot_concept.png)
+![github_copilot_concept](../image/github_copilot_concept.png)
 
 Github Copilot不仅仅是直接调用了Open AI的大语言模型，而是在IDE插件和GitHub Copilot服务之间做了很多工程工作，主要是以编辑框的鼠标位置的上下文来生成提示词片段，然后在GitHub Copilot服务上使用这些上下文然后在生成提示词来调用Open AI的大语言模型。那么怎样定义上下文呢？除了编辑框中的上下文之外，还有相邻的tab页里的内容也是上下文。在生成新的代码时，也会参考上下文的格式来生成代码。
 
