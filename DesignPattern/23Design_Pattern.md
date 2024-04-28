@@ -170,7 +170,7 @@ class InnerClassSingleton {
 
   private InnerClassSingleton(){
     if(SingletonHolder.innerClassSingleton != null){
-      throw RuntimeException("单例不允许使用反射来创建实例");
+      throw new RuntimeException("单例不允许使用反射来创建实例");
     }
   }
   
@@ -280,20 +280,20 @@ protected native Object clone() throws CloneNotSupportedException;
 
 ```java
 public ConcretePrototype deepClone(){
-		try(ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream oos = new ObjectOutputStream(bos)){
-			oos.writeObject(this);
+    try(ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos)){
+        oos.writeObject(this);
 
-			ByteArrayInputStream ios = new ByteArrayInputStream(bos.toByteArray());
-			ObjectInputStream ois = new ObjectInputStream(ios);
-			ConcretePrototype o = (ConcretePrototype)ois.readObject();
-			return o;
-		} catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        ByteArrayInputStream ios = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(ios);
+        ConcretePrototype o = (ConcretePrototype)ois.readObject();
+        return o;
+    } catch (IOException e) {
+        throw new RuntimeException(e);
+    } catch (ClassNotFoundException e) {
+        throw new RuntimeException(e);
     }
+}
 ```
 
 原型模式的缺点是：
@@ -303,7 +303,54 @@ public ConcretePrototype deepClone(){
 
 ### 5. 代理设计模式 Proxy
 
-代理模式是为对象提供一个代理，以控制对这个对象的访问，代理对象在客户端和目标对象之间起到中介的作用，
+代理模式是为对象提供一个代理，以控制对这个对象的访问，代理对象在客户端和目标对象之间起到中介的作用。
+
+适用场景：保护目标对象，增强目标功能。
+
+代理模式分成静态代理和动态代理：静态代理显示地声明被代理对象。静态代理最大的问题在于，如果有很多实现了代理接口的对象，那么需要为每个对象实现一个代理对象，这样会导致类膨胀。所以需要使用动态代理，动态代理的实现分为JDK的实现和cglib的实现两种：
+
+1. JDK的反射实现动态代理：
+
+   ```java
+   public interface Isubject {
+       void doSomething();
+   } 
+   
+   pubic class Person implements Isubject {
+       public void doSomething(){
+           System.out.println("person do something.");
+       }
+   }
+   
+   public class People implements Isubject {
+       public void doSomething(){
+           System.out.println("people do something.");
+       }
+   }
+   
+   public class DynamicProxy implements {
+       private Isubject target;
+   
+       public DynamicProxy(Isubject target) {
+           this.target = target;
+       }
+   
+       public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{
+           System.out.println("before");
+           Object result = method.invoke(target, args);
+           System.out.println("after");
+           return result;
+       }
+   }
+   
+   public class Test{
+       
+   }
+   ```
+
+   
+
+2. cglib来实现动态代理：
 
 ### 5. 享元设计模式 Flyweight
 
