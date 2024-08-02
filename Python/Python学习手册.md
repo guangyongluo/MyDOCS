@@ -118,3 +118,39 @@ if __name__ == '__main__':
 
 
 
+### 7. Python网络编程
+
+Python中使用socket包可以实现TCP和UDP两种连接方式的网络编程，TCP连接是先经过网络上的三次握手后建立了端到端的可靠连接后再进行数据传输；UDP连接是不可靠连接，可以不用建立连接直接发送数据。TCP连接的服务器端首先需要绑定服务器的IP和端口，然后对绑定的IP和端口号进行监听，当有客户端请求连接时，就可以得到客户端的socket，再使用socket读取信息了：
+
+```python
+# 创建服务端socket对象
+socket_server = socket(AF_INET, SOCK_STREAM)
+
+# bind绑定ip,端口号
+socket_server.bind((ip, port))
+
+# 监听端口
+socket_server.listen(5)
+
+# 等待连接
+socket_client, client_addr = socket_server.accept()
+
+# 当接受到连接请求后得到数据
+data = socket_client.recv(1024).decode('utf-8')
+```
+
+在TCP的客户端服务中，先请求连接服务端监听的ip和端口，然后再使用socket发送数据：
+
+```python
+# 创建客户端socket对象
+socket_client = socket.socket()
+
+# 连接服务器端ip和端口
+socket_client.connect((ip, port))
+
+# 发送数据
+socket_client.send(data.encode('utf-8'))
+```
+
+UDP时面向无连接的，只需要知道对方的ip和端口号就可以发送数据，但是不保证数据一定被接受。
+

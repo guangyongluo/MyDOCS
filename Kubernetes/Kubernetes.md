@@ -179,7 +179,7 @@ Pod的探针机制是指容器内应用的监测机制，根据不同的探针�
 
 1. StartupProbe：当配置了 startupProbe 后，会先禁用其他探针，直到 startupProbe 成功后，其他探针才会继续。由于有时候不能准确预估应用一定是多长时间启动成功，因此配置另外两种方式不方便配置初始化时长来检测，而配置了 statupProbe 后，只有在应用启动成功了，才会执行另外两种探针，可以更加方便的结合使用另外两种探针使用。
 2. LivenessProbe：用于探测容器中的应用是否运行，如果探测失败，kubelet 会根据配置的重启策略进行重启，若没有配置，默认就认为容器启动成功，不会执行重启策略。该探针会在Pod启动后一直运行，知道整个生命周期结束。
-3. ReadinessProbe：用于探测容器内的程序是否健康，它的返回值如果返回 success，那么就认为该容器已经完全启动，并且该容器是可以接收外部流量的。该探针会在Pod启动后一直运行，知道整个生命周期结束。
+3. ReadinessProbe：用于探测容器内的程序是否健康，它的返回值如果返回 success，那么就认为该容器已经完全启动，并且该容器是可以接收外部流量的。该探针会在Pod启动后一直运行，直到整个生命周期结束。
 
 Pod的生命周期，当Kubernetes API Server收到create请求后就开始了一个Pod的生命周期，前期是一些准备Pod运行阶段，包括一些image下载，环境配置的准备，pause底层容器的创建。当准备阶段完成后，就正式进入Pod的启动阶段，可以为pod配置一个或多个init container来初始化Pod，之后就是postStart钩子函数运行阶段，但是需要注意的是command命令和postStart钩子函数不存在先后顺序，所以一般初始化工作都使用init container来完成，当postStart执行结束后就开始了前面讲的StartupProbe、LivenessProbe和ReadinessProbe探针的运行，之后就是Pod容器的运行阶段。最后在Pod生命周期结束之前还有一个preStop的钩子函数来执行一些清理工作，需要注意的是执行时间必须小于terminationGracePeriodSeconds，该配置是Pod变为删除中的状态后，会给 pod 一个宽限期，让 pod 去执行一些清理或销毁操作，可以根据具体的清理工作来设置该配置的值。
 
@@ -296,7 +296,7 @@ StatefulSet 也可以采用滚动更新策略，同样是修改pod template属�
 
 5. ##### 深入理解DaemonSet
 
-DaemonSet与之前讨论的Deployment和StatefulSet都不一样，DaemonSet是针对Node来创建Pod的，也就是说DaemonSet选择器会找个匹配的Node来为每个Node创建Pod。其主要用于日志收集，服务监控等应用。我们来看看一个简单的日志收集的DaemonSet的yaml文件：
+DaemonSet与之前讨论的Deployment和StatefulSet都不一样，DaemonSet主要是针对Node来创建Pod的，也就是说DaemonSet选择器会找个匹配的Node来为每个Node创建Pod。其主要用于日志收集，服务监控等应用。我们来看看一个简单的日志收集的DaemonSet的yaml文件：
 
 ```yaml
 apiVersion: apps/v1
@@ -314,6 +314,8 @@ spec:
         id: fluentd
       name: fluentd # Pod的名字
     spec:
+      nodeSelector:
+        type: microservices
       containers:
       - name: fluentd-es # 容器的名字
         image: agilestacks/fluentd-elasticsearch:v1.3.0 # 指定容器的image
@@ -383,6 +385,127 @@ spec:
 使用`kubectl get svc` 查看Service信息，通过Service的cluster ip进行访问，使用`kubectl get po -o wide`查看Pod信息，通过Pod的IP进行访问，创建其他Pod通过Service Name进行访问(推荐)。测试可以使用busybox来访问service name使用`kubectl exec -it busybox -- sh`进入容器后使用`curl http://nginx-svc`来访问Pod服务。默认在当前 namespace 中访问，如果需要跨Namespace 访问Pod，则在Service Name 后面加上 .<namespace> 即可，可以使用`curl http://nginx-svc.default`来访问带Namespace的服务。
 
 8. ##### Ingress深入理解
+
+Ingress主要负责K8S外部网络的统一入口，在K8S中Ingress跟反向代理类似，代理所有的服务请求。其实Ingress就是K8S反向代理的抽象，其提供了K8S中的反向代理接口，其实现由很多，NGINX是其实现之一。要想使用Ingress必须先安装Ingress的实现，使用Helm安装Ingress的步骤：
+
+```shell
+# 添加Ingress仓库
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+# 查看仓库列表
+helm repo list
+
+# 搜索 ingress-nginx
+helm search repo ingress-nginx
+
+# 下载安装包
+helm pull ingress-nginx/ingress-nginx
+
+# 将下载好的安装包解压
+tar xf ingress-nginx-xxx.tgz
+
+# 解压后，进入解压完成的目录
+cd ingress-nginx
+
+# 修改 values.yaml
+# 镜像地址：修改为国内镜像
+registry: registry.cn-hangzhou.aliyuncs.com
+image: google_containers/nginx-ingress-controller
+image: google_containers/kube-webhook-certgen
+tag: v1.3.0
+
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
+
+# 修改部署配置的 kind: DaemonSet
+nodeSelector:
+  ingress: "true" # 增加选择器，如果 node 上有 ingress=true 就部署
+# 将 admissionWebhooks.enabled 修改为 false
+# 将 service 中的 type 由 LoadBalancer 修改为 ClusterIP，如果服务器是云平台才用 LoadBalancer
+
+# 为 ingress 专门创建一个 namespace
+kubectl create ns ingress-nginx
+
+# 为需要部署 ingress 的节点上加标签
+kubectl label node k8s-node1 ingress=true
+
+# 安装 ingress-nginx
+helm install ingress-nginx ./ingress-nginx -n ingress-nginx
+```
+
+安装完ingress-controller后再来创建Ingress
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress # 资源类型为 Ingress
+metadata:
+  name: test-nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules: # ingress 规则配置，可以配置多个
+  - host: k8s.wolfcode.cn # 域名配置，可以使用通配符 *
+    http:
+      paths: # 相当于 nginx 的 location 配置，可以配置多个
+      - pathType: Prefix # 路径类型，按照路径类型进行匹配 ImplementationSpecific 需要指定 IngressClass，具体匹配规则以 IngressClass 中的规则为准。Exact：精确匹配，URL需要与path完全匹配上，且区分大小写的。Prefix：以 / 作为分隔符来进行前缀匹配
+        backend:
+          service: 
+            name: nginx-svc # 代理到哪个 service
+            port: 
+              number: 80 # service 的端口
+        path: /api # 等价于 nginx 中的 location 的路径前缀匹配
+```
+
+
+
+
+
+9. ##### ConfigMap和Secret深入理解
+
+K8S提供两种配置管理方式：一种是明文配置管理ConfigMap，一般用于去存储 Pod 中应用所需的一些配置信息，或者环境变量，将配置于 Pod 分开，避免应为修改配置导致还需要重新构建镜像与容器；第二种是使用base64编码后的密文配置管理。ConfigMap主要应用于应用的配置管理方面，使用 kubectl create configmap -h 查看示例，构建 configmap 对象。与 ConfigMap 类似，用于存储配置信息，但是主要用于存储敏感信息、需要加密的信息，Secret 可以提供数据加密、解密功能。在创建 Secret 时，要注意如果要加密的字符中，包含了有特殊字符，需要使用转义符转移，也可以对特殊字符使用单引号描述。
+
+使用 ConfigMap 或 Secret 挂载到目录的时候，会将容器中源目录给覆盖掉，此时我们可能只想覆盖目录中的某一个文件，但是这样的操作会覆盖整个文件，因此需要使用到SubPath配置方式：
+
+1. 定义 volumes 时需要增加 items 属性，配置 key 和 path，且 path 的值不能从 / 开始
+2. 在容器内的 volumeMounts 中增加 subPath 属性，该值与 volumes 中 items.path 的值相同
+
+```yaml
+ ......
+ volumeMounts:
+ - mountPath: /etc/nginx/nginx.conf # 挂载到哪里
+   name: config-volume # 使用哪个 configmap 或 secret
+   subPath: etc/nginx/nginx.conf # 与 volumes.[0].items.path 相同
+volumes:
+- configMap:
+  name: nginx-conf # configMap 名字
+  items: # subPath 配置
+    key: nginx.conf # configMap 中的文件名
+    path: etc/nginx/nginx.conf # subPath 路径
+```
+
+我们通常会将项目的配置文件作为 configmap 然后挂载到 pod，那么如果更新 configmap 中的配置，会不会更新到 pod 中呢？这得分成几种情况：
+
+- 默认方式：会更新，更新周期是更新时间 + 缓存时间
+- subPath：不会更新
+- 变量形式：如果 pod 中的一个变量是从 configmap 或 secret 中得到，同样也是不会更新的
+
+对于 subPath 的方式，我们可以取消 subPath 的使用，将配置文件挂载到一个不存在的目录，避免目录的覆盖，然后再利用软连接的形式，将该文件链接到目标位置，但是如果目标位置原本就有文件，可能无法创建软链接，此时可以基于前面讲过的 postStart 操作执行删除命令，将默认的吻技安删除即可。更新configmap的方式：
+
+- 通过 edit 命令直接修改 configmap
+
+- 由于 configmap 我们创建通常都是基于文件创建，并不会编写 yaml 配置文件，因此修改时我们也是直接修改配置文件，而 replace 是没有 --from-file 参数的，因此无法实现基于源配置文件的替换，此时我们可以利用下方的命令实现
+
+  \# 该命令的重点在于 --dry-run 参数，该参数的意思打印 yaml 文件，但不会将该文件发送给 apiserver，再结合 -oyaml 输出 yaml 文件就可以得到一个配置好但是没有发给 apiserver 的文件，然后再结合 replace 监听控制台输出得到 yaml 数据即可实现替换
+  kubectl create cm --from-file=nginx.conf --dry-run -oyaml | kubectl replace -f-
+
+对于一些敏感服务的配置文件，在线上有时是不允许修改的，此时在配置 configmap 时可以设置 immutable: true 来禁止修改。
+
+10. ##### 持久化存储
+
+
+
+
 
 
 
