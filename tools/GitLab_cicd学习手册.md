@@ -1,0 +1,3 @@
+# GitLab Pipeline语法
+
+本地使用docker-compose来安装gitlab和gitlab runner。由于gitlab集成了CI组件，所以只需安装好gitlab就可以使用gitlab的cicd功能了。
