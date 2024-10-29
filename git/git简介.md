@@ -16,10 +16,17 @@ git做为最流行的版本控制工具被广大的程序员所熟知，它的�
 5. 暂存区(temproray space)：使用git add来暂存需要提交的文件，这些暂存区里的文件将成为你本次提交的变更文件；
 6. 提交(commit)：将本地暂存区中的文件提交到版本库中，这样你的本次修改将会本git仓库记录；
 7. 推送(push)：将本地仓库推送到远程仓库，同步你本次的变化。
+8. HEAD: 指向当前commit索引位置的指针。
 
 ##### 常用的命令和操作
 
 * git init repo : 新建一个名为repo的仓库；
-* 
+* git diff : 工作目录和暂存区之间的差异；
+* git diff --cache: 暂存区和仓库之间的差异；
+* git log: 查看整个commit索引树；
+* git branch develop: 创建develop分支；
+* git checkout develop: 将当前工作目录切换成develop分支；
+* git merge develop: 将develop合并到master分支；
+
 
 
