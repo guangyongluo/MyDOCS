@@ -204,9 +204,59 @@ wget https://get.helm.sh/helm-v3.16.2-linux-amd64.tar.gz
 tar -zxvf helm-v3.16.2-linux-amd64.tar.gz
 mv linux-amd64/helm /usr/bin/
 
+helm repo add cilium https://helm.cilium.io/
+
 helm install cilium cilium/cilium --version 1.16.3 --namespace kube-system
 
 helm upgrade cilium cilium/cilium --version 1.16.3 --namespace kube-system \
    --reuse-values \
    --set hubble.relay.enabled=true \
    --set hubble.ui.enabled=true
+
+# 启动本地路由
+helm upgrade cilium cilium/cilium --version 1.16.3 --namespace kebe-system \
+  -- reuse-values \
+  -- set tunnel=disabled \
+  --set autoDirectNodeRoutes=true \
+  --set ipv4NativeRoutingCIDR=10.0.0.0/22
+
+# 安装gitlab
+helm upgrade --install gitlab gitlab/gitlab --version 8.5.1 --namespace gitlab-system\
+  --timeout 600s \
+  --set global.hosts.domain=gitlab.local.com \
+  --set global.hosts.externalIP=192.168.1.8 \
+  --set certmanager-issuer.email=guangyongluo@outlook.com
+
+# 安装nfs服务
+sudo apt update
+sudo apt install nfs-kernel-server
+
+vi /etc/exports
+
+/data/nfs/rw 192.168.1.0/24(rw,sync,no_subtree_check)
+/data/nfs/ro 192.168.1.0/24(rw,sync,no_subtree_check)
+
+sudo exportfs -ra
+sudo systemctl restart nfs-kernel-server
+
+mount 192.168.1.8:/data/nfs/rw /mnt/nfs/rw
+mount 192.168.1.8:/data/nfs/ro /mnt/nfs/ro
+
+# 安装nfs-client-provisioner
+helm repo add https://charts.kubesphere.io/main
+
+helm pull kubesphere/nfs-client-provisioner --version=4.0.11
+
+vi nfs-client-provisioner/values.yaml
+
+kubectl create ns kubesphere
+
+helm install nfs-client ./nfs-client-provisioner -namespace kubesphere
+
+# 安装gitlab
+kubectl create ns gitlab
+
+helm repo add gitlab https://charts.gitlab.io/
+
+helm repo update
+
