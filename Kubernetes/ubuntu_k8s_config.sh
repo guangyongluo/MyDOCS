@@ -1,15 +1,24 @@
 # 本地DNS
-192.168.1.8 k8s-master01 k8s-master01
-192.168.1.9 k8s-worker01 k8s-worker01
-192.168.1.10 k8s-worker02 k8s-worker02
+192.168.8.8 k8s-master01 k8s-master01
+192.168.8.9 k8s-worker01 k8s-worker01
+192.168.8.10 k8s-worker02 k8s-worker02
+192.168.8.11 k8s-worker03 k8s-worker03
 
 
-# chonry时间同步 /etc/chrony/chrony.conf
+# 安装chrony
+apt-get update
+apt-get install chrony
+
+# chonry时间同步 vi /etc/chrony/chrony.conf
 server ntp1.aliyun.com iburst
 
 # 时间同步
 ln -sf /usr/share/zoneinfo/Asia/Shanghai > /etc/localtime
 echo "Asia/Shanghai" > /etc/timezone
+
+# 重启时间同步服务
+systemctl start chronyd
+
 
 # 关闭防火墙
 service ufw stop
@@ -89,7 +98,6 @@ cat > /etc/docker/daemon.json << EOF
         "http://hub-mirror.c.163.com"
 	],
 	"max-concurrent-downloads": 10,
-	"log-dirver": "json-file",
 	"log-level": "warn",
 	"log-opts": {
 		"max-size": "10m",
@@ -189,7 +197,7 @@ kubeadm config images list --kubernetes-version=v1.30.6
 kubeadm config images pull --image-repository registry.aliyuncs.com/google_containers --cri-socket=unix:///var/run/cri-dockerd.sock
 
 # kubeadm初始化
-kubeadm init --kubernetes-version=v1.30.6 --pod-network-cidr=10.223.0.0/16 --apiserver-advertise-address=192.168.1.8 --image-repository registry.aliyuncs.com/google_containers --cri-socket=unix:///var/run/cri-dockerd.sock
+kubeadm init --kubernetes-version=v1.30.6 --pod-network-cidr=10.223.0.0/16 --apiserver-advertise-address=192.168.8.8 --image-repository registry.aliyuncs.com/google_containers --cri-socket=unix:///var/run/cri-dockerd.sock
 
 kubeadm join 192.168.1.8:6443 --token zqgjjd.qoj64eq66p3uk74r \
 	--discovery-token-ca-cert-hash sha256:d4370a069807877a1f8b56393d0c6de5c65d3288d308bcdaf0db3205873e7072 --cri-socket=unix:///var/run/cri-dockerd.sock
@@ -205,6 +213,9 @@ tar -zxvf helm-v3.16.2-linux-amd64.tar.gz
 mv linux-amd64/helm /usr/bin/
 
 helm repo add cilium https://helm.cilium.io/
+helm repo add harbor  https://helm.goharbor.io
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add gitlab https://charts.gitlab.io/
 
 helm install cilium cilium/cilium --version 1.16.3 --namespace kube-system
 
@@ -224,23 +235,30 @@ helm upgrade cilium cilium/cilium --version 1.16.3 --namespace kebe-system \
 helm upgrade --install gitlab gitlab/gitlab --version 8.5.1 --namespace gitlab-system\
   --timeout 600s \
   --set global.hosts.domain=gitlab.local.com \
-  --set global.hosts.externalIP=192.168.1.8 \
+  --set global.hosts.externalIP=192.168.8.8 \
   --set certmanager-issuer.email=guangyongluo@outlook.com
 
 # 安装nfs服务
 sudo apt update
 sudo apt install nfs-kernel-server
 
+mkdir -p /data/nfs
+
+chown nobody:nogroup /data/nfs
+
 vi /etc/exports
 
-/data/nfs/rw 192.168.1.0/24(rw,sync,no_subtree_check)
-/data/nfs/ro 192.168.1.0/24(rw,sync,no_subtree_check)
+/data/nfs 192.168.8.0/24(rw,sync,no_subtree_check)
 
 sudo exportfs -ra
 sudo systemctl restart nfs-kernel-server
 
-mount 192.168.1.8:/data/nfs/rw /mnt/nfs/rw
-mount 192.168.1.8:/data/nfs/ro /mnt/nfs/ro
+# 安装nfs-common工具包
+sudo apt update
+sudo apt install nfs-common
+
+mkdir -p /mnt/nfs
+mount 192.168.8.12:/data/nfs /mnt/nfs
 
 # 安装nfs-client-provisioner
 helm repo add https://charts.kubesphere.io/main
@@ -255,8 +273,6 @@ helm install nfs-client ./nfs-client-provisioner -namespace kubesphere
 
 # 安装gitlab
 kubectl create ns gitlab
-
-helm repo add gitlab https://charts.gitlab.io/
 
 helm repo update
 
