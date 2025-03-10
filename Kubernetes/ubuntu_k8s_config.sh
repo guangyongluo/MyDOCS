@@ -271,8 +271,27 @@ kubectl create ns kubesphere
 
 helm install nfs-client ./nfs-client-provisioner -namespace kubesphere
 
+# 安装harbor, 在所有worker节点导入harbor所需的镜像
+mv /home/vagrant/harbor-offline-installer-v2.12.0.tgz ./harbor
+
+cd ./harbor/
+
+docker load -i ./harbor/harbor.v2.12.0.tar.gz
+
+
+# 在master节点开始安装harbor
+kubectl create ns harbor
+
+mkdir harbor
+
+cd harbor
+
+
+
 # 安装gitlab
 kubectl create ns gitlab
 
 helm repo update
+
+
 
