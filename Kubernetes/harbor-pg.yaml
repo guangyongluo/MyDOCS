@@ -1,0 +1,153 @@
+#psql -U harbordata -h 127.0.0.1 -p 5432 registry -c "create database registry;"
+#psql -U harbordata -h 127.0.0.1 -p 5432 registry -c "create database clair;"
+#psql -U harbordata -h 127.0.0.1 -p 5432 registry -c "create database notary_server;"
+#psql -U harbordata -h 127.0.0.1 -p 5432 registry -c "create database notary_signer;"
+#psql -U harbordata -h 127.0.0.1 -p 5432 registry -c "create database harbor_core;"
+#psql -U harbordata -h 127.0.0.1 -p 5432 registry -c "\l+"
+
+
+# backup and restore database
+# export PGPASSWORD=registryauthdata ; pg_dump -h 127.0.0.1 -U harbordata -c -C registry -f /tmp/registry_$(date +%y%m%d).sql
+# export PGPASSWORD=registryauthdata ; psql -U harbordata -h 127.0.0.1 -p 5432 registry < /tmp/registry_$(date +%y%m%d).sql && rm /tmp/registry_$(date +%y%m%d).sql
+
+# remote ip connect:
+#  pip3 install pgcli -i https://mirrors.aliyun.com/pypi/simple
+#  export PGPASSWORD=registryauthdata ; psql -h 10.0.0.201 -p 28201 postgres -U postgres -c "\l+"
+
+# delete database and create new database
+#  psql -U harbordata -h 127.0.0.1 -p 5432 postgres
+#  drop database registry;
+#  create database registry with owner harbordata;
+#  \l+
+
+
+# pg web admin
+# docker run -p 5050:80 -v /mnt/data/pgadmin:/var/lib/pgadmin -e "PGADMIN_DEFAULT_EMAIL=ops@boge.com" -e "PGADMIN_DEFAULT_PASSWORD=Boge@666" -d dpage/pgadmin4
+
+
+# pvc
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: harbor-postgresql
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: nfs-client
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harbor-postgresql
+  labels:
+    app: harbor
+    tier: postgresql
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: harbor
+    tier: postgresql
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harbor-postgresql
+  labels:
+    app: harbor
+    tier: postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harbor
+      tier: postgresql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: harbor
+        tier: postgresql
+    spec:
+      # nodeSelector:
+      #  gee/disk: "500g"
+      initContainers:
+        - name: "remove-lost-found"
+          image: registry.cn-shanghai.aliyuncs.com/acs/busybox:v1.29.2
+          imagePullPolicy: "IfNotPresent"
+          command:  ["rm", "-fr", "/var/lib/postgresql/data/lost+found"]
+          volumeMounts:
+            - name: harbor-postgresqldata
+              mountPath: /var/lib/postgresql/data
+      containers:
+        - image: postgres:13.7-bullseye
+          name: harbor-postgresql
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - echo 'leon'
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+          env:
+            - name: POSTGRES_USER
+              value: harbordata
+            - name: POSTGRES_DB
+              value: registry
+            - name: POSTGRES_PASSWORD
+              value: registryauthdata
+            - name: TZ
+              value: Asia/Shanghai
+          args:
+             - -c
+             - shared_buffers=256MB
+             - -c
+             - max_connections=3000
+             - -c
+             - work_mem=128MB
+          ports:
+            - containerPort: 5432
+              name: postgresql
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - exec pg_isready -U harbordata -h 127.0.0.1 -p 5432 -d registry
+            initialDelaySeconds: 120
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - exec pg_isready -U harbordata -h 127.0.0.1 -p 5432 -d registry
+            initialDelaySeconds: 20
+            timeoutSeconds: 3
+            periodSeconds: 5
+          # resources:
+            # requests:
+              # cpu: "1"
+              # memory: 2Gi
+            # limits:
+              # cpu: "1"
+              # memory: 2Gi
+          volumeMounts:
+            - name: harbor-postgresqldata
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: harbor-postgresqldata
+          persistentVolumeClaim:
+            claimName: harbor-postgresql
+
